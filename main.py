@@ -1,12 +1,16 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from dotenv import load_dotenv
-
+import openai
+import requests
 import os
+
 load_dotenv()
 
 token = os.getenv("TELEGRAM_BOT_API_KEY")
 bot_username = os.getenv("BOT_USERNAME")
+openai_api_key = os.getenv('OPENAI_API_KEY')
+openai_client = openai.OpenAI(api_key=openai_api_key)
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Hello {update.effective_user.first_name}, I'm {bot_username}")
@@ -49,6 +53,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"Bot response: {response}")
     await update.message.reply_text(response)
     
+async def handle_audio_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Download and save the audio file
+    audio_file = await context.bot.get_file(update.message.voice.file_id)
+    audio_path = f'./audio/voice_{update.message.voice.file_unique_id}.ogg'
+    
+    # Create the audio directory if it doesn't exist
+    os.makedirs('./audio', exist_ok=True)
+    
+    with open(audio_path, 'wb') as f:
+        response = requests.get(audio_file.file_path)
+        f.write(response.content)
+
+    # Transcribe the audio file with Whisper API
+    with open(audio_path, "rb") as file:
+        transcription = openai_client.audio.transcriptions.create(
+            model="whisper-1", 
+            file=file
+        )
+    transcribed_text = transcription.text
+
+    await update.message.reply_text(transcribed_text)
+    
 if __name__ == "__main__":
     print("Starting bot...")
     app = Application.builder().token(token).build()
@@ -58,6 +84,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("custom", custom_command))
     
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
+    app.add_handler(MessageHandler(filters.VOICE, handle_audio_message))
     
     app.add_error_handler(error)
     
