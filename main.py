@@ -73,7 +73,38 @@ async def handle_audio_message(update: Update, context: ContextTypes.DEFAULT_TYP
         )
     transcribed_text = transcription.text
 
-    await update.message.reply_text(transcribed_text)
+    await process_and_reply(update, context, transcribed_text)
+    
+async def process_and_reply(update, context, input_text):
+    print(f"Processing input: {input_text}")
+    
+    # Generate response using OpenAI
+    response = openai_client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "user", "content": input_text}
+        ]
+    )
+    response_text = response.choices[0].message.content
+    
+    # Convert response to speech
+    speech_response = openai_client.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input=response_text
+    )
+    
+    # Save the audio file
+    audio_path = f'./audio/response_{update.message.message_id}.mp3'
+    with open(audio_path, 'wb') as f:
+        f.write(speech_response.content)
+    
+    # Send both text and voice response
+    # await update.message.reply_text(response_text)
+    await update.message.reply_voice(voice=open(audio_path, 'rb'))
+    
+    # Clean up the audio file
+    os.remove(audio_path)
     
 if __name__ == "__main__":
     print("Starting bot...")
