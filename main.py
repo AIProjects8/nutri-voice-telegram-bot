@@ -123,7 +123,7 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = openai_client.responses.create(
             model="gpt-4o",
             input=[
-                {"role": "user", "content": "What's in this image?"},
+                {"role": "user", "content": "Opisz co widzisz na tym obrazku. Odpowiedz po polsku."},
                 {
                     "role": "user",
                     "content": [
