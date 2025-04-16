@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import openai
 import requests
 import os
+import base64
 
 load_dotenv()
 
@@ -106,6 +107,42 @@ async def process_and_reply(update, context, input_text):
     # Clean up the audio file
     os.remove(audio_path)
     
+async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    photo = update.message.photo[-1]
+    file = await context.bot.get_file(photo.file_id)
+    
+    # Download the image
+    image_path = f'./images/image_{photo.file_unique_id}.jpg'
+    os.makedirs('./images', exist_ok=True)
+    
+    await file.download_to_drive(image_path)
+    
+    # Process the image with OpenAI
+    with open(image_path, "rb") as image_file:
+        base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+        response = openai_client.responses.create(
+            model="gpt-4o",
+            input=[
+                {"role": "user", "content": "What's in this image?"},
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_image",
+                            "image_url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    ]
+                }
+            ]
+        )
+    
+    # Send the description
+    description = response.output_text
+    await update.message.reply_text(description)
+    
+    # Clean up
+    os.remove(image_path)
+
 if __name__ == "__main__":
     print("Starting bot...")
     app = Application.builder().token(token).build()
@@ -116,6 +153,7 @@ if __name__ == "__main__":
     
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
     app.add_handler(MessageHandler(filters.VOICE, handle_audio_message))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_image))
     
     app.add_error_handler(error)
     
