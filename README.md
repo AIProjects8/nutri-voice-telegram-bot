@@ -53,6 +53,8 @@ OPENAI_API_KEY="your-openai-api-key"
 4. BotFather will provide you with a token
 5. Copy the token and add it to your `.env` file
 
+Use /setjoingroups disable group chats for bot.
+
 ## Running the Bot
 
 1. Make sure your virtual environment is activated
