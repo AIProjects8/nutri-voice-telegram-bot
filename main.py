@@ -1,20 +1,20 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from dotenv import load_dotenv
 import openai
 import requests
 import os
 import base64
+from auth_helper import restricted
+from config import Config
 
-load_dotenv()
+# Initialize configuration
+config = Config.from_env()
+config.validate()
 
-token = os.getenv("TELEGRAM_BOT_API_KEY")
-bot_username = os.getenv("BOT_USERNAME")
-openai_api_key = os.getenv('OPENAI_API_KEY')
-openai_client = openai.OpenAI(api_key=openai_api_key)
+openai_client = openai.OpenAI(api_key=config.openai_api_key)
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"Hello {update.effective_user.first_name}, I'm {bot_username}")
+    await update.message.reply_text(f"Hello {update.effective_user.first_name}, I'm {config.bot_username}")
     
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("/start - Start the bot")
@@ -34,6 +34,7 @@ def handle_response(text: str) -> str:
     
     return "I don't understand"
   
+@restricted
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_type: str = update.message.chat.type
     text: str = update.message.text
@@ -41,13 +42,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"User ({update.message.chat.id}) in {message_type}: {text}")
     
     if message_type == "group":
-        if bot_username in text:
-            new_text: str = text.replace(bot_username, "").strip()
-            response: str = handle_response(new_text)
-            
-            await update.message.reply_text(response)
-        else:
-          return        
+        await update.message.reply_text("Group chats are not supported yet.")
     else:
       response: str = handle_response(text)
     
@@ -79,7 +74,6 @@ async def handle_audio_message(update: Update, context: ContextTypes.DEFAULT_TYP
 async def process_and_reply(update, context, input_text):
     print(f"Processing input: {input_text}")
     
-    # Generate response using OpenAI
     response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -88,23 +82,18 @@ async def process_and_reply(update, context, input_text):
     )
     response_text = response.choices[0].message.content
     
-    # Convert response to speech
     speech_response = openai_client.audio.speech.create(
         model="tts-1",
         voice="alloy",
         input=response_text
     )
     
-    # Save the audio file
     audio_path = f'./audio/response_{update.message.message_id}.mp3'
     with open(audio_path, 'wb') as f:
         f.write(speech_response.content)
     
-    # Send both text and voice response
-    # await update.message.reply_text(response_text)
     await update.message.reply_voice(voice=open(audio_path, 'rb'))
     
-    # Clean up the audio file
     os.remove(audio_path)
     
 async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -145,7 +134,7 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     print("Starting bot...")
-    app = Application.builder().token(token).build()
+    app = Application.builder().token(config.telegram_bot_token).build()
     
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
@@ -159,10 +148,3 @@ if __name__ == "__main__":
     
     print("Bot is running...")
     app.run_polling(poll_interval=3)
-            
-    
-    
-
-
-
-
