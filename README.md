@@ -2,6 +2,8 @@
 
 A Telegram bot that can process voice messages, images, and provide responses using OpenAI's GPT-4 Vision and Whisper APIs.
 
+![image](https://github.com/user-attachments/assets/48cf2ad6-da1b-42d7-bbba-8fe4c2eabe27)
+
 ## Features
 
 - 🎤 Voice message processing with OpenAI Whisper
