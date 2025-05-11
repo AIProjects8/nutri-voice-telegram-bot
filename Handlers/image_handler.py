@@ -1,8 +1,8 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 import os
-from auth_helper import restricted
-from openai_manager import OpenAIManager
+from Tools.auth_helper import restricted
+from Tools.openai_manager import OpenAIManager
 
 @restricted
 async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):

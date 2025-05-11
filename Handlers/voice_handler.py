@@ -2,9 +2,9 @@ from telegram import Update
 from telegram.ext import ContextTypes
 import os
 from config import Config
-from auth_helper import restricted
-from speech_manager import SpeechManager
-from openai_manager import OpenAIManager
+from Tools.auth_helper import restricted
+from Tools.speech_manager import SpeechManager
+from Tools.openai_manager import OpenAIManager
 
 @restricted
 async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):

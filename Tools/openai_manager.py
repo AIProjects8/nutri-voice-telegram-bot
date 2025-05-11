@@ -1,9 +1,9 @@
 from typing import Optional, List, Dict, Any
 import base64
-from openai_tools import OpenAIClient
+from Tools.openai_tools import OpenAIClient
 from config import Config
-from conversation_manager import ConversationManager
-from image_helper import encode_image_to_data_url
+from Tools.conversation_manager import ConversationManager
+from Tools.image_helper import encode_image_to_data_url
 
 class OpenAIManager:
     _instance = None

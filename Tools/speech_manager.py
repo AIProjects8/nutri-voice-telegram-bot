@@ -1,6 +1,6 @@
 import os
 import requests
-from openai_tools import OpenAIClient
+from Tools.openai_tools import OpenAIClient
 
 class SpeechManager:
     _instance = None
