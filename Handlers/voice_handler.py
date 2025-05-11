@@ -30,7 +30,7 @@ async def process_and_reply(update, context, input_text):
     print(f"Processing input: {input_text}")
     
     response = OpenAIClient.get_instance().client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=Config.from_env().gpt_model,
         messages=[
             {"role": "user", "content": input_text}
         ]

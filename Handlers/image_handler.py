@@ -4,6 +4,7 @@ import os
 import base64
 from openai_tools import OpenAIClient
 from auth_helper import restricted
+from config import Config
 
 @restricted
 async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -21,7 +22,7 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with open(image_path, "rb") as image_file:
         base64_image = base64.b64encode(image_file.read()).decode('utf-8')
         response = OpenAIClient.get_instance().client.responses.create(
-            model="gpt-4o",
+            model=Config.from_env().gpt_model,
             input=[
                 {"role": "system", "content": "You are a helpful assistant. Always respond in Polish language."},
                 {"role": "user", "content": text},

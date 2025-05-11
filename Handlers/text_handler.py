@@ -2,6 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from auth_helper import restricted
 from openai_tools import OpenAIClient
+from config import Config
 
 @restricted
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -15,7 +16,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     response = OpenAIClient.get_instance().client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=Config.from_env().gpt_model,
         messages=[
             {"role": "system", "content": "You are a helpful assistant. Always respond in Polish language."},
             {"role": "user", "content": text}
