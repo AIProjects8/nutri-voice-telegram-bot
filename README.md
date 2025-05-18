@@ -1,98 +1,84 @@
 # NutriVoice Telegram Bot
 
-A Telegram bot that can process voice messages, images, and provide responses using OpenAI's GPT-4 Vision and Whisper APIs.
-
-![image](https://github.com/user-attachments/assets/48cf2ad6-da1b-42d7-bbba-8fe4c2eabe27)
-
-## Features
-
-- 🎤 Voice message processing with OpenAI Whisper
-- 🖼️ Image analysis with GPT-4 Vision
-- 🔊 Text-to-speech responses
-- 🇵🇱 Polish language support
+A Telegram bot that helps users with nutrition-related queries through voice messages.
 
 ## Prerequisites
 
-- Python 3.7.1 or newer
-- OpenAI API key
-- Telegram Bot Token (from BotFather)
+- Python 3.12
+- Telegram Bot Token (obtained from BotFather)
+- OpenAI API Key
 
-## Setup
+## Bot Setup with BotFather
+
+1. Open Telegram and search for [@BotFather](https://t.me/botfather)
+2. Start a chat with BotFather and follow these commands:
+   - `/newbot` - Create a new bot
+     - Choose a name for your bot
+     - Choose a username (must end with 'bot')
+     - Save the API token provided
+   - `/setdescription` - Set a description for your bot
+   - `/setcommands` - Set the following command:
+     ```
+     start - Start the bot and register your user ID
+     ```
+   - `/setjoingroups` - Disable group functionality (this bot is for private conversations only)
+
+## Project Setup
 
 1. Clone the repository:
-```bash
-git clone [your-repository-url]
-cd nutri-voice-telegram-bot
-```
+   ```bash
+   git clone <repository-url>
+   cd nutri-voice-telegram-bot
+   ```
 
 2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+   ```bash
+   python3.12 -m venv venv
+   source venv/bin/activate  # On macOS/Linux
+   ```
 
 3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4. Create a `.env` file in the root directory with your API keys:
-```env
-TELEGRAM_BOT_API_KEY="your-telegram-bot-token"
-BOT_USERNAME="@your-bot-username"
-OPENAI_API_KEY="your-openai-api-key"
-```
+4. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Edit the `.env` file and add your credentials:
+   ```
+   TELEGRAM_BOT_TOKEN=your_bot_token_here
+   OPENAI_API_KEY=your_openai_api_key_here
+   USER_ID=your_telegram_user_id_here
+   ```
 
-## BotFather Setup
-
-1. Open Telegram and search for @BotFather
-2. Start a chat and use the `/newbot` command
-3. Follow the instructions to:
-   - Choose a name for your bot
-   - Choose a username (must end in 'bot')
-4. BotFather will provide you with a token
-5. Copy the token and add it to your `.env` file
-
-Use /setjoingroups disable group chats for bot.
+   Note: To get your USER_ID:
+   1. Start the bot using the `/start` command
+   2. The bot will display your user ID
+   3. Add this ID to the .env file
 
 ## Running the Bot
 
 1. Make sure your virtual environment is activated
 2. Run the bot:
-```bash
-python main.py
-```
+   ```bash
+   python main.py
+   ```
 
-## Usage
+## Features
 
-- Send voice messages to get transcribed and analyzed responses
-- Send images to get descriptions in Polish
-- The bot will respond with both text and voice messages
-
-## Directory Structure
-
-```
-nutri-voice-telegram-bot/
-├── main.py              # Main bot code
-├── requirements.txt     # Python dependencies
-├── .env                # Environment variables
-├── audio/              # Temporary audio files
-└── images/             # Temporary image files
-```
-
-## Dependencies
-
-- python-telegram-bot
-- openai
-- python-dotenv
-- requests
+- Voice message processing
+- Nutrition-related queries
+- Private conversation mode
+- User-specific interactions
 
 ## Security Notes
 
 - Never commit your `.env` file
 - Keep your API keys secure
-- The bot temporarily stores audio and image files, which are automatically deleted after processing
+- The bot is designed for private conversations only
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the LICENSE file for details.
