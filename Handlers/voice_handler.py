@@ -5,8 +5,10 @@ from config import Config
 from Tools.auth_helper import restricted
 from Tools.speech_manager import SpeechManager
 from Tools.openai_manager import OpenAIManager
+from SqlDB.middleware import update_db_user
 
 @restricted
+@update_db_user
 async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     audio_file = await context.bot.get_file(update.message.voice.file_id)
     audio_path = f'./audio/voice_{update.message.voice.file_unique_id}.ogg'

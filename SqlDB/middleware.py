@@ -3,23 +3,28 @@ from telegram.ext import ContextTypes
 from .database import get_db
 from .user_service import get_user_by_telegram_id, create_user
 from .cache import UserCache
+from functools import wraps
 
-async def user_middleware(update: Update) -> bool:
-    if not update.effective_user:
-        return False
+def update_db_user(func):
+    @wraps(func)
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
+        if not update.effective_user:
+            return False
+            
+        telegram_id = update.effective_user.id
+        cache = UserCache()
         
-    telegram_id = update.effective_user.id
-    cache = UserCache()
-    
-    if cache.has_user(telegram_id):
-        return True
-        
-    db = next(get_db())
-    try:
-        user = get_user_by_telegram_id(db, telegram_id)
-        if not user:
-            user = create_user(db, telegram_id)
-        cache.add_user(telegram_id, user)
-        return True
-    finally:
-        db.close() 
+        if cache.has_user(telegram_id):
+            return await func(update, context, *args, **kwargs)
+            
+        db = next(get_db())
+        try:
+            user = get_user_by_telegram_id(db, telegram_id)
+            if not user:
+                user = create_user(db, telegram_id)
+            cache.add_user(telegram_id, user)
+            return await func(update, context, *args, **kwargs)
+        finally:
+            db.close()
+            
+    return wrapper 
