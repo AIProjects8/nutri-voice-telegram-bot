@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
 import os
@@ -22,6 +22,9 @@ def init_db():
     # If you modified something into the database then remove docker container
     # with command: `docker compose down -v`
     if not existing_tables:
+        with engine.connect() as conn:
+            conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
+            conn.commit()
         Base.metadata.create_all(bind=engine)
         print("Database tables created successfully")
     else:
