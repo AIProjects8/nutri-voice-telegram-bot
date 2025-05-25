@@ -2,9 +2,15 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from Tools.auth_helper import restricted
 from Tools.openai_manager import OpenAIManager
+from SqlDB.middleware import user_exists_middleware
 
 @restricted
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await user_exists_middleware(update, context):
+        print("User not found")
+    else:
+        print("User found")
+        
     message_type: str = update.message.chat.type
     text: str = update.message.text
     user_id: int = update.message.from_user.id
