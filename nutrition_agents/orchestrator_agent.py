@@ -1,4 +1,4 @@
-from agents import Agent
+from agents import Agent, ModelSettings
 from .base_agent import BaseAgent
 from .context import AgentContext
 from config import Config
@@ -18,9 +18,9 @@ class OrchestratorAgent(BaseAgent):
             name=self.name,
             instructions=self.instructions,
             model=self.model,
-            model_settings={
-                "temperature": config.agent_temperature
-            }
+            model_settings=ModelSettings(
+                temperature=config.agent_temperature
+            )
         )
     
     def get_capabilities(self) -> list[str]:

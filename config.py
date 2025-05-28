@@ -34,7 +34,8 @@ class Config:
             allowed_user_ids=allowed_user_ids,
             use_agents=os.getenv("USE_AGENTS", "false").lower() == "true",
             mongodb_uri=os.getenv("MONGODB_URI", "mongodb://localhost:27017/nutribot"),
-            agent_model=os.getenv("AGENT_MODEL", "gpt-4o-mini")
+            agent_model=os.getenv("AGENT_MODEL", "gpt-4o-mini"),
+            agent_temperature=float(os.getenv("AGENT_TEMPERATURE", "0.7"))
         )
 
     def validate(self) -> None:
