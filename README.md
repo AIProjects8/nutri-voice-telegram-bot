@@ -48,15 +48,31 @@ A Telegram bot that helps users with nutrition-related queries through voice mes
    ```
    Edit the `.env` file and add your credentials:
    ```
-   TELEGRAM_BOT_TOKEN=your_bot_token_here
-   OPENAI_API_KEY=your_openai_api_key_here
-   USER_ID=your_telegram_user_id_here
+  TELEGRAM_BOT_API_KEY= (get from BotFather)
+  BOT_USERNAME=@bot_name (get from BotFather;)
+  OPENAI_API_KEY= (get from OpenAI)
+  VOICE_RESPONSE=false (true if you want to have voice responses when sending voice requests)
+  GPT_MODEL="gpt-4o-mini" (choose whatever model you want but it needs to be able to process images and have function calling)
+  ALLOWED_USER_IDS= (your user id, you can get it when calling /start command)
+  POSTGRES_USER=postgres (db user)
+  POSTGRES_PASSWORD=postgres (db password)
+  POSTGRES_DB=nutri_voice (db name)
    ```
 
    Note: To get your USER_ID:
    1. Start the bot using the `/start` command
    2. The bot will display your user ID
    3. Add this ID to the .env file
+
+5. Set up database:
+  ```bash
+  docker compose up
+  ```
+
+  If you have problems with setting up database, remove it together with volume:
+  ```bash
+  docker compose down -v
+  ```
 
 ## Running the Bot
 

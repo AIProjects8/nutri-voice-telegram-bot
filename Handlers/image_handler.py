@@ -3,8 +3,10 @@ from telegram.ext import ContextTypes
 import os
 from Tools.auth_helper import restricted
 from Tools.openai_manager import OpenAIManager
+from SqlDB.middleware import update_db_user
 
 @restricted
+@update_db_user
 async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     photo = update.message.photo[-1]
     text = update.message.caption or "Describe what you see on the image."

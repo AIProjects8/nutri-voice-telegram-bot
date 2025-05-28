@@ -6,6 +6,7 @@ from Handlers.text_handler import handle_text
 from Commands.start_command import start_command
 from Commands.help_command import help_command
 from Tools.errors_handler import error
+from SqlDB import initialize_database
 
 # Initialize configuration
 config = Config.from_env()
@@ -13,6 +14,11 @@ config.validate()
 
 if __name__ == "__main__":
     print("Starting bot...")
+    
+    # Initialize database
+    print("Initializing database...")
+    initialize_database()
+    
     app = Application.builder().token(config.telegram_bot_token).build()
     
     app.add_handler(CommandHandler("start", start_command))

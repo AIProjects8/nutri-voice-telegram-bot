@@ -10,7 +10,7 @@ class Message:
 
 class ConversationManager:
     _instance = None
-    _conversations: Dict[int, List[Message]] = {}
+    _conversations: Dict[str, List[Message]] = {}
     _max_history: int = 10
 
     def __new__(cls):
@@ -18,7 +18,7 @@ class ConversationManager:
             cls._instance = super(ConversationManager, cls).__new__(cls)
         return cls._instance
 
-    def add_message(self, user_id: int, role: str, content: Union[str, Dict[str, Any], List[Dict[str, Any]]]) -> None:
+    def add_message(self, user_id: str, role: str, content: Union[str, Dict[str, Any], List[Dict[str, Any]]]) -> None:
         if user_id not in self._conversations:
             self._conversations[user_id] = []
         
@@ -33,7 +33,7 @@ class ConversationManager:
         if len(self._conversations[user_id]) > self._max_history:
             self._conversations[user_id] = self._conversations[user_id][-self._max_history:]
 
-    def get_conversation_history(self, user_id: int) -> List[dict]:
+    def get_conversation_history(self, user_id: str) -> List[dict]:
         messages = [
             {"role": msg.role, "content": msg.content}
             for msg in self._conversations[user_id]
@@ -41,6 +41,6 @@ class ConversationManager:
         
         return messages
 
-    def clear_history(self, user_id: int) -> None:
+    def clear_history(self, user_id: str) -> None:
         if user_id in self._conversations:
             self._conversations[user_id] = [] 
