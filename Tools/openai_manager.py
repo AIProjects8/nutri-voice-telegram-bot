@@ -4,7 +4,7 @@ from Tools.openai_tools import OpenAIClient
 from config import Config
 from Tools.conversation_manager import ConversationManager
 from Tools.image_helper import encode_image_to_data_url
-from SqlDB.cache import UserCache
+from SqlDB.user_cache import UserCache
 from Constants.prompts import CHAT_MAIN_PROMPT
 
 class OpenAIManager:

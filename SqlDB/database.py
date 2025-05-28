@@ -7,12 +7,15 @@ from .models import Base
 
 load_dotenv()
 
-POSTGRES_USER = os.getenv('POSTGRES_USER')
-POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
-POSTGRES_DB = os.getenv('POSTGRES_DB')
-DATABASE_URL = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@localhost:5432/{POSTGRES_DB}'
+def get_database_url(): 
+    POSTGRES_USER = os.getenv('POSTGRES_USER') 
+    POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD') 
+    POSTGRES_DB = os.getenv('POSTGRES_DB') 
+    if not all([POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB]): 
+        raise EnvironmentError("Database environment variables are not fully set.") 
+    return f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@localhost:5432/{POSTGRES_DB}'
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(get_database_url())
 
 def init_db():
     inspector = inspect(engine)

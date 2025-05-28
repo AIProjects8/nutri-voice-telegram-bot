@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from .database import get_db
 from .user_service import get_user_by_telegram_id, create_user
-from .cache import UserCache
+from .user_cache import UserCache
 from functools import wraps
 
 def update_db_user(func):
