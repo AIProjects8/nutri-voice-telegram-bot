@@ -13,6 +13,10 @@ class Config:
     voice_response: bool
     gpt_model: str
     allowed_user_ids: list[int]
+    use_agents: bool
+    mongodb_uri: str
+    agent_model: str
+    agent_temperature: float
 
     @classmethod
     def from_env(cls) -> 'Config':
@@ -25,9 +29,12 @@ class Config:
             telegram_bot_token=os.getenv("TELEGRAM_BOT_API_KEY"),
             bot_username=os.getenv("BOT_USERNAME"),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
-            voice_response=os.getenv("VOICE_RESPONSE"),
+            voice_response=os.getenv("VOICE_RESPONSE", "false").lower() == "true",
             gpt_model=os.getenv("GPT_MODEL"),
-            allowed_user_ids=allowed_user_ids
+            allowed_user_ids=allowed_user_ids,
+            use_agents=os.getenv("USE_AGENTS", "false").lower() == "true",
+            mongodb_uri=os.getenv("MONGODB_URI", "mongodb://localhost:27017/nutribot"),
+            agent_model=os.getenv("AGENT_MODEL", "gpt-4o-mini")
         )
 
     def validate(self) -> None:
@@ -39,8 +46,6 @@ class Config:
             missing_vars.append("BOT_USERNAME")
         if not self.openai_api_key:
             missing_vars.append("OPENAI_API_KEY")
-        if not self.voice_response:
-            missing_vars.append("VOICE_RESPONSE")
         if not self.gpt_model:
             missing_vars.append("GPT_MODEL")
         if not self.allowed_user_ids:

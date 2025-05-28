@@ -13,7 +13,20 @@ class OpenAIManager:
             cls._instance = super(OpenAIManager, cls).__new__(cls)
         return cls._instance
 
+    async def process_with_agent(self, user_id: int, message: str) -> str:
+        from nutrition_agents import create_orchestrator_agent, AgentContext
+        from agents import Runner
+        
+        context = AgentContext(user_id=user_id)
+        orchestrator = create_orchestrator_agent()
+        result = await Runner.run(orchestrator.agent, message, context=context)
+        return result.final_output
+
     async def process_text(self, user_id: int, text: str) -> str:
+        config = Config.from_env()
+        if config.use_agents:
+            return await self.process_with_agent(user_id, text)
+        
         conv_manager = ConversationManager()
         conv_manager.add_message(user_id, "user", text)
         messages = conv_manager.get_conversation_history(user_id)
@@ -57,4 +70,4 @@ class OpenAIManager:
         response_text = response.output_text
         conv_manager.add_message(user_id, "assistant", response_text)
         
-        return response_text 
+        return response_text
