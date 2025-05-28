@@ -6,8 +6,10 @@ from Tools.conversation_manager import ConversationManager
 from Tools.image_helper import encode_image_to_data_url
 from SqlDB.cache import UserCache
 from Constants.prompts import CHAT_MAIN_PROMPT
-from nutrition_agents import create_orchestrator_agent, AgentContext
+from nutrition_agents import create_orchestrator_agent, AgentContext, create_user_registration_agent, create_meal_agent
 from agents import Runner
+from Tools.database_manager import DatabaseManager
+
 class OpenAIManager:
     _instance = None
 
@@ -18,9 +20,21 @@ class OpenAIManager:
 
     async def process_with_agent(self, user_id: int, message: str) -> str:        
         context = AgentContext(user_id=user_id)
-        orchestrator = create_orchestrator_agent()
-        result = await Runner.run(orchestrator.agent, message, context=context)
-        return result.final_output
+        db_manager = DatabaseManager()
+        
+        if not db_manager.user_exists(user_id) or not self._is_registration_completed(user_id):
+            registration_agent = create_user_registration_agent()
+            result = await Runner.run(registration_agent.agent, message, context=context)
+            return result.final_output
+        else:
+            orchestrator = create_orchestrator_agent()
+            result = await Runner.run(orchestrator.agent, message, context=context)
+            return result.final_output
+    
+    def _is_registration_completed(self, user_id: int) -> bool:
+        db_manager = DatabaseManager()
+        user = db_manager.get_user(user_id)
+        return user is not None and user.registration_completed
 
     async def process_text(self, user_id: int, text: str) -> str:
         config = Config.from_env()
