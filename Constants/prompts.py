@@ -1,0 +1,1 @@
+CHAT_MAIN_PROMPT = 'You are a helpful assistant. Always respond in Polish language.'

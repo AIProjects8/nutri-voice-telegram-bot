@@ -5,6 +5,7 @@ from config import Config
 from Tools.conversation_manager import ConversationManager
 from Tools.image_helper import encode_image_to_data_url
 from SqlDB.cache import UserCache
+from Constants.prompts import CHAT_MAIN_PROMPT
 
 class OpenAIManager:
     _instance = None
@@ -25,7 +26,7 @@ class OpenAIManager:
         response = OpenAIClient.get_instance().client.responses.create(
             model=Config.from_env().gpt_model,
             input=messages,
-            instructions="You are a helpful assistant. Always respond in Polish language."
+            instructions=CHAT_MAIN_PROMPT
         )
         
         response_text = response.output_text
@@ -57,7 +58,7 @@ class OpenAIManager:
         response = OpenAIClient.get_instance().client.responses.create(
             model=Config.from_env().gpt_model,
             input=messages,
-            instructions="You are a helpful assistant. Always respond in Polish language."
+            instructions=CHAT_MAIN_PROMPT
         )
         
         response_text = response.output_text
