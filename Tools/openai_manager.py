@@ -22,7 +22,7 @@ class OpenAIManager:
             telegram_user_id)
 
         db = next(get_db())
-        if is_user_details_exists(db, db_user_id):
+        if not is_user_details_exists(db, db_user_id):
             return process_survey_message(db_user_id, text)
 
         conv_manager.add_message(db_user_id, "user", text)
