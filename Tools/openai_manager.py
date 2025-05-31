@@ -1,11 +1,12 @@
-from typing import Optional, List, Dict, Any
-import base64
+
 from Tools.openai_tools import OpenAIClient
 from config import Config
 from Tools.conversation_manager import ConversationManager
 from Tools.image_helper import encode_image_to_data_url
-from SqlDB.user_cache import UserCache
 from Constants.prompts import CHAT_MAIN_PROMPT
+from SqlDB.user_details_service import is_user_details_exists
+from SqlDB.database import get_db
+from Tools.survey_agent import process_survey_message
 
 
 class OpenAIManager:
@@ -19,6 +20,10 @@ class OpenAIManager:
     async def process_text(self, telegram_user_id: int, text: str) -> str:
         conv_manager, db_user_id = ConversationManager.get_user_conversation(
             telegram_user_id)
+
+        db = next(get_db())
+        if is_user_details_exists(db, db_user_id):
+            return process_survey_message(db_user_id, text)
 
         conv_manager.add_message(db_user_id, "user", text)
         messages = conv_manager.get_conversation_history(db_user_id)
