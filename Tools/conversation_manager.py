@@ -21,15 +21,12 @@ class ConversationManager:
             cls._instance = super(ConversationManager, cls).__new__(cls)
         return cls._instance
 
-    @classmethod
-    def get_user_conversation(cls, telegram_user_id: int) -> Tuple['ConversationManager', str]:
-        conv_manager = cls()
-        user_id = UserCache().get_user_id(telegram_user_id)
-        return conv_manager, user_id
-
-    def add_message(self, user_id: str, role: str, content: Union[str, Dict[str, Any], List[Dict[str, Any]]]) -> None:
+    def _validate_user_id(self, user_id: str) -> None:
         if not user_id:
             raise ValueError("User ID cannot be empty")
+
+    def add_message(self, user_id: str, role: str, content: Union[str, Dict[str, Any], List[Dict[str, Any]]]) -> None:
+        self._validate_user_id(user_id)
 
         if user_id not in self._conversations:
             self._conversations[user_id] = []
@@ -46,8 +43,7 @@ class ConversationManager:
             self._conversations[user_id] = self._conversations[user_id][-self._max_history:]
 
     def get_conversation_history(self, user_id: str) -> List[dict]:
-        if not user_id:
-            raise ValueError("User ID cannot be empty")
+        self._validate_user_id(user_id)
 
         if user_id not in self._conversations:
             return []
@@ -58,8 +54,7 @@ class ConversationManager:
         ]
 
     def clear_history(self, user_id: str) -> None:
-        if not user_id:
-            raise ValueError("User ID cannot be empty")
+        self._validate_user_id(user_id)
 
         if user_id in self._conversations:
             self._conversations[user_id] = []

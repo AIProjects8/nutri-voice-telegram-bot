@@ -1,6 +1,8 @@
 from typing import Dict, Optional
 from Constants.prompts import SURVEY_DONT_UNDERSTAND_PROMPT
 from Tools.survey_helper import ask_question, create_user_details_from_answers
+from Constants.responses import SAVED_USER_DETAILS_RESPONSE, CONFIRM_USER_DETAILS_RESPONSE, SURVEY_DONT_UNDERSTAND_RESPONSE, SURVEY_SUMMARY_RESPONSE, QUESTIONS, SURVEY_START_RESPONSE, SURVEY_START_RESPONSE_AGAIN
+from Constants.error_responses import ERROR_SAVING_DATA_RESPONSE, ERROR_RESPONSE
 
 
 class SurveyState:
@@ -10,104 +12,94 @@ class SurveyState:
         self.current_question: int = 0
         self.answers: Dict[str, str] = {}
         self.awaiting_confirmation: bool = False
+        self.survey_started: bool = False
 
 
-# Survey questions
-QUESTIONS = [
-    "Jaka jest Twoja waga?",
-    "Jaki jest Twój rok urodzenia?",
-    "Jaka jest Twoja płeć?",
-    "Czy masz alergie? Jeśli tak, proszę wymienić je."
-]
+class SurveyManager:
 
-# Store survey state for each user
-survey_states: Dict[str, SurveyState] = {}
+    def __init__(self):
+        self._survey_states: Dict[str, SurveyState] = {}
 
+    def _get_survey_state(self, user_id: str) -> Optional[SurveyState]:
+        """Get survey state for a user if it exists."""
+        return self._survey_states.get(user_id)
 
-def get_survey_state(user_id: str) -> Optional[SurveyState]:
-    """Get survey state for a user if it exists."""
-    return survey_states.get(user_id)
+    def _create_survey_state(self, user_id: str) -> SurveyState:
+        """Create new survey state for a user."""
+        self._survey_states[user_id] = SurveyState()
+        return self._survey_states[user_id]
 
+    def _clear_survey_state(self, user_id: str) -> None:
+        """Clear survey state for a user."""
+        self._survey_states.pop(user_id, None)
 
-def create_survey_state(user_id: str) -> SurveyState:
-    """Create new survey state for a user."""
-    survey_states[user_id] = SurveyState()
-    return survey_states[user_id]
+    def _start_survey(self, user_id: str) -> str:
+        """Start a new survey for a user."""
+        self._create_survey_state(user_id)
+        return SURVEY_START_RESPONSE.format(question=QUESTIONS[0])
 
+    def _format_survey_summary(self, answers: Dict[str, str]) -> str:
+        """Format survey answers into a readable summary."""
+        return "\n".join(f"- {q} : \n\t* {a}" for q, a in answers.items())
 
-def clear_survey_state(user_id: str) -> None:
-    """Clear survey state for a user."""
-    survey_states.pop(user_id, None)
-
-
-def get_or_create_survey_state(user_id: str) -> SurveyState:
-    """Get or create survey state for a user."""
-    state = get_survey_state(user_id)
-    if state is None:
-        state = create_survey_state(user_id)
-    return state
-
-
-def format_survey_summary(answers: Dict[str, str]) -> str:
-    """Format survey answers into a readable summary."""
-    return "\n".join(f"- {q} : \n\t* {a}" for q, a in answers.items())
-
-
-def process_survey_message(user_id: str, message: str) -> str:
-    """Process a message in the survey context"""
-
-    state = get_survey_state(user_id)
-    if state is None:
-        return start_survey(user_id)
-
-    # If awaiting confirmation
-    if state.awaiting_confirmation:
+    def _handle_awaiting_confirmation(self, user_id: str, message: str, state: SurveyState) -> str:
+        """Handle awaiting confirmation for a user."""
         message = message.lower().strip()
         if message == "tak":
             try:
                 saved = create_user_details_from_answers(
                     state.answers, user_id)
                 if saved:
-                    clear_survey_state(user_id)
-                    return "Dziękuję! Twoje dane zostały zapisane."
+                    self._clear_survey_state(user_id)
+                    return SAVED_USER_DETAILS_RESPONSE
                 else:
-                    create_survey_state(user_id)
-                    return "Błąd podczas zapisywania danych. Proszę spróbować ponownie. Zacznijmy od nowa.\n\n" + QUESTIONS[0]
-            except:
-                create_survey_state(user_id)
-                return f"Błąd podczas zapisywania danych: {str(e)}"
+                    self._create_survey_state(user_id)
+                    return ERROR_SAVING_DATA_RESPONSE.format(question=QUESTIONS[0])
+            except Exception as e:
+                self._create_survey_state(user_id)
+                return ERROR_RESPONSE.format(error=str(e))
         elif message == "nie":
-            create_survey_state(user_id)
-            return "Zacznijmy od nowa.\n\n" + QUESTIONS[0]
+            self._create_survey_state(user_id)
+            return SURVEY_START_RESPONSE_AGAIN.format(question=QUESTIONS[0])
         else:
-            return "Proszę odpowiedzieć 'tak' lub 'nie'. Czy wszystkie odpowiedzi są poprawne?"
+            return CONFIRM_USER_DETAILS_RESPONSE
 
-    # Process current question
-    try:
-        current_q = QUESTIONS[state.current_question]
-        response = ask_question(current_q, message)
+    def _handle_current_question(self, message: str, state: SurveyState) -> str:
+        """Handle the current question in the survey"""
 
-        if response.lower() == SURVEY_DONT_UNDERSTAND_PROMPT.lower():
-            return "⚠️ Przepraszam, nie rozumiem odpowiedzi. Proszę spróbować ponownie."
+        try:
+            current_q = QUESTIONS[state.current_question]
+            response = ask_question(current_q, message)
 
-        # Save answer and move to next question
-        state.answers[current_q] = response
-        state.current_question += 1
+            if response.lower() == SURVEY_DONT_UNDERSTAND_PROMPT.lower():
+                return SURVEY_DONT_UNDERSTAND_RESPONSE
 
-        # Check if survey is complete
-        if state.current_question >= len(QUESTIONS):
-            state.awaiting_confirmation = True
-            summary = format_survey_summary(state.answers)
-            return f"Oto podsumowanie Twoich odpowiedzi:\n\n{summary}\n\nCzy wszystkie odpowiedzi są poprawne? (tak/nie)"
+            # Save answer and move to next question
+            state.answers[current_q] = response
+            state.current_question += 1
 
-        # Return next question
-        return QUESTIONS[state.current_question]
+            # Check if survey is complete
+            if state.current_question >= len(QUESTIONS):
+                state.awaiting_confirmation = True
+                summary = self._format_survey_summary(state.answers)
+                return SURVEY_SUMMARY_RESPONSE.format(summary=summary)
 
-    except Exception as e:
-        return f"⚠️ Wystąpił nieoczekiwany błąd: {str(e)}"
+            # Return next question
+            return QUESTIONS[state.current_question]
 
+        except Exception as e:
+            return ERROR_RESPONSE.format(error=str(e))
 
-def start_survey(user_id: str) -> str:
-    """Start a new survey for a user."""
-    create_survey_state(user_id)
-    return f"Witaj!\n\nW celu poprawnego działania aplikacji, muszę przeprowadzić krótką ankietę.\n\nProszę odpowiedzieć na pytania.\n\n{QUESTIONS[0]}"
+    def process_survey_message(self, user_id: str, message: str) -> str:
+        """Process a message in the survey context"""
+
+        state = self._get_survey_state(user_id)
+        if state is None:
+            return self._start_survey(user_id)
+
+        # If awaiting confirmation
+        if state.awaiting_confirmation:
+            return self._handle_awaiting_confirmation(user_id, message, state)
+
+        # Process current question
+        return self._handle_current_question(message, state)

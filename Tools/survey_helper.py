@@ -1,7 +1,7 @@
 import json
 from Constants.prompts import CHAT_MAIN_PROMPT, SURVEY_QUESTION_PROMPT
 from Tools.openai_tools import OpenAIClient
-from SqlDB.user_details_service import save_user_details
+from SqlDB.user_details_service import create_user_details
 from config import Config
 
 
@@ -55,7 +55,7 @@ Required format:
     details = json.loads(response.choices[0].message.content.strip())
 
     try:
-        save_user_details(
+        create_user_details(
             user_id=user_id,
             weight=float(details["weight"]),
             year_of_birth=int(details["year_of_birth"]),
