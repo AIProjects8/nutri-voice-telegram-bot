@@ -1,10 +1,17 @@
 from datetime import datetime
 
-CHAT_MAIN_PROMPT = 'You are a helpful assistant. Always respond in Polish language.'
 
-SURVEY_DONT_UNDERSTAND_PROMPT = "NIE_ROZUMIEM"
+class SystemPromptsConstants:
+    MEDICAL_INTAKE_ASSISTANT = "You are a medical intake assistant."
+    SURVEY_ANSWERS_ASSISTANT = "Extract user details and return valid JSON only."
 
-SURVEY_QUESTION_PROMPT = f"""
+
+class PromptsConstants:
+
+    CHAT_MAIN_PROMPT = "You are a helpful assistant. Always respond in Polish language."
+    SURVEY_DONT_UNDERSTAND_PROMPT = "NIE_ROZUMIEM"
+
+    SURVEY_QUESTION_PROMPT = f"""
 Try to find the answer to the question and return in the specified format.
 
 BIRTH YEAR QUESTION:
@@ -34,4 +41,19 @@ Return exactly: {SURVEY_DONT_UNDERSTAND_PROMPT} if:
 - You cannot extract meaningful information
 
 Process the answer according to the rules above.
+"""
+
+    SURVEY_ANSWERS_PROMPT = """
+Extract user details from these survey answers and return as JSON:
+
+{answers_text}
+
+Required format:
+{{
+    "user_id": "{user_id}",
+    "weight": < number >,
+    "year_of_birth": < integer >,
+    "gender": "M" or "K",
+    "allergies": "<comma-separated string or empty>"
+}}
 """

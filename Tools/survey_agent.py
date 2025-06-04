@@ -1,8 +1,7 @@
 from typing import Dict, Optional
-from Constants.prompts import SURVEY_DONT_UNDERSTAND_PROMPT
+from Constants.prompts import PromptsConstants
 from Tools.survey_helper import ask_question, create_user_details_from_answers
-from Constants.responses import SAVED_USER_DETAILS_RESPONSE, CONFIRM_USER_DETAILS_RESPONSE, SURVEY_DONT_UNDERSTAND_RESPONSE, SURVEY_SUMMARY_RESPONSE, QUESTIONS, SURVEY_START_RESPONSE, SURVEY_START_RESPONSE_AGAIN
-from Constants.error_responses import ERROR_SAVING_DATA_RESPONSE, ERROR_RESPONSE
+from Constants.responses import ResponsesConstants, ErrorResponsesConstants
 
 
 class SurveyState:
@@ -36,7 +35,7 @@ class SurveyManager:
     def _start_survey(self, user_id: str) -> str:
         """Start a new survey for a user."""
         self._create_survey_state(user_id)
-        return SURVEY_START_RESPONSE.format(question=QUESTIONS[0])
+        return ResponsesConstants.SURVEY_START_RESPONSE.format(question=ResponsesConstants.QUESTIONS[0])
 
     def _format_survey_summary(self, answers: Dict[str, str]) -> str:
         """Format survey answers into a readable summary."""
@@ -51,44 +50,44 @@ class SurveyManager:
                     state.answers, user_id)
                 if saved:
                     self._clear_survey_state(user_id)
-                    return SAVED_USER_DETAILS_RESPONSE
+                    return ResponsesConstants.SAVED_USER_DETAILS_RESPONSE
                 else:
                     self._create_survey_state(user_id)
-                    return ERROR_SAVING_DATA_RESPONSE.format(question=QUESTIONS[0])
+                    return ErrorResponsesConstants.ERROR_SAVING_DATA_RESPONSE.format(question=QUESTIONS[0])
             except Exception as e:
                 self._create_survey_state(user_id)
-                return ERROR_RESPONSE.format(error=str(e))
+                return ErrorResponsesConstants.ERROR_RESPONSE.format(error=str(e))
         elif message == "nie":
             self._create_survey_state(user_id)
-            return SURVEY_START_RESPONSE_AGAIN.format(question=QUESTIONS[0])
+            return ResponsesConstants.SURVEY_START_RESPONSE_AGAIN.format(question=ResponsesConstants.QUESTIONS[0])
         else:
-            return CONFIRM_USER_DETAILS_RESPONSE
+            return ResponsesConstants.CONFIRM_USER_DETAILS_RESPONSE
 
     def _handle_current_question(self, message: str, state: SurveyState) -> str:
         """Handle the current question in the survey"""
 
         try:
-            current_q = QUESTIONS[state.current_question]
+            current_q = ResponsesConstants.QUESTIONS[state.current_question]
             response = ask_question(current_q, message)
 
-            if response.lower() == SURVEY_DONT_UNDERSTAND_PROMPT.lower():
-                return SURVEY_DONT_UNDERSTAND_RESPONSE
+            if response.lower() == PromptsConstants.SURVEY_DONT_UNDERSTAND_PROMPT.lower():
+                return ResponsesConstants.SURVEY_DONT_UNDERSTAND_RESPONSE
 
             # Save answer and move to next question
             state.answers[current_q] = response
             state.current_question += 1
 
             # Check if survey is complete
-            if state.current_question >= len(QUESTIONS):
+            if state.current_question >= len(ResponsesConstants.QUESTIONS):
                 state.awaiting_confirmation = True
                 summary = self._format_survey_summary(state.answers)
-                return SURVEY_SUMMARY_RESPONSE.format(summary=summary)
+                return ResponsesConstants.SURVEY_SUMMARY_RESPONSE.format(summary=summary)
 
             # Return next question
-            return QUESTIONS[state.current_question]
+            return ResponsesConstants.QUESTIONS[state.current_question]
 
         except Exception as e:
-            return ERROR_RESPONSE.format(error=str(e))
+            return ErrorResponsesConstants.ERROR_RESPONSE.format(error=str(e))
 
     def process_survey_message(self, user_id: str, message: str) -> str:
         """Process a message in the survey context"""

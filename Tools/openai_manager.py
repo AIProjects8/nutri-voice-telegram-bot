@@ -3,7 +3,7 @@ from Tools.openai_tools import OpenAIClient
 from config import Config
 from Tools.conversation_manager import ConversationManager
 from Tools.image_helper import encode_image_to_data_url
-from Constants.prompts import CHAT_MAIN_PROMPT
+from Constants.prompts import PromptsConstants
 from SqlDB.user_details_service import get_user_details
 from SqlDB.user_cache import UserCache
 from Tools.survey_agent import SurveyManager
@@ -37,7 +37,7 @@ class OpenAIManager:
         response = OpenAIClient.get_instance().client.responses.create(
             model=Config.from_env().gpt_model,
             input=messages,
-            instructions=CHAT_MAIN_PROMPT
+            instructions=PromptsConstants.CHAT_MAIN_PROMPT
         )
 
         response_text = response.output_text
@@ -68,7 +68,7 @@ class OpenAIManager:
         response = OpenAIClient.get_instance().client.responses.create(
             model=Config.from_env().gpt_model,
             input=messages,
-            instructions=CHAT_MAIN_PROMPT
+            instructions=PromptsConstants.CHAT_MAIN_PROMPT
         )
 
         response_text = response.output_text
