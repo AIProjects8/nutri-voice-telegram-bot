@@ -15,7 +15,11 @@ class UserCache:
         return self._cache.get(telegram_id)
 
     def get_user_id(self, telegram_id: int) -> str:
-        return str(self.get_user(telegram_id).id)
+        user = self.get_user(telegram_id)
+        if user is None:
+            raise ValueError(
+                f"User with telegram_id {telegram_id} not found in cache")
+        return str(user.id)
 
     def add_user(self, telegram_id: int, user: User) -> None:
         self._cache[telegram_id] = user

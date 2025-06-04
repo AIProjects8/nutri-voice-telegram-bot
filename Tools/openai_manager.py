@@ -16,16 +16,20 @@ class OpenAIManager:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(OpenAIManager, cls).__new__(cls)
-            cls._survey_manager = SurveyManager()
         return cls._instance
+
+    @property
+    def survey_manager(self):
+        if self._survey_manager is None:
+            self._survey_manager = SurveyManager()
+        return self._survey_manager
 
     async def process_text(self, telegram_user_id: int, text: str) -> str:
         conv_manager = ConversationManager()
-        db_user = UserCache().get_user(telegram_user_id)
-        db_user_id = str(db_user.id)
+        db_user_id = UserCache().get_user_id(telegram_user_id)
 
         if not get_user_details(db_user_id):
-            return self._survey_manager.process_survey_message(db_user_id, text)
+            return self.survey_manager.process_survey_message(db_user_id, text)
 
         conv_manager.add_message(db_user_id, "user", text)
         messages = conv_manager.get_conversation_history(db_user_id)
@@ -43,8 +47,7 @@ class OpenAIManager:
 
     async def process_image(self, telegram_user_id: int, image_path: str, text: str) -> str:
         conv_manager = ConversationManager()
-        db_user = UserCache().get_user(telegram_user_id)
-        db_user_id = str(db_user.id)
+        db_user_id = UserCache().get_user_id(telegram_user_id)
 
         data_url = encode_image_to_data_url(image_path)
 
