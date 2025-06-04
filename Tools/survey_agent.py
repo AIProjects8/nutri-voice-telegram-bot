@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 from Constants.prompts import PromptsConstants
-from Tools.survey_helper import ask_question, create_user_details_from_answers
+from Tools.openai_user_details_manager import OpenAIUserDetailsManager
 from Constants.responses import ResponsesConstants, ErrorResponsesConstants
 
 
@@ -18,6 +18,7 @@ class SurveyManager:
 
     def __init__(self):
         self._survey_states: Dict[str, SurveyState] = {}
+        self._user_details_manager = OpenAIUserDetailsManager()
 
     def _get_survey_state(self, user_id: str) -> Optional[SurveyState]:
         """Get survey state for a user if it exists."""
@@ -46,7 +47,7 @@ class SurveyManager:
         message = message.lower().strip()
         if message == "tak":
             try:
-                saved = create_user_details_from_answers(
+                saved = self._user_details_manager.create_user_details_from_answers(
                     state.answers, user_id)
                 if saved:
                     self._clear_survey_state(user_id)
@@ -68,7 +69,8 @@ class SurveyManager:
 
         try:
             current_q = ResponsesConstants.QUESTIONS[state.current_question]
-            response = ask_question(current_q, message)
+            response = self._user_details_manager.ask_question(
+                current_q, message)
 
             if response.lower() == PromptsConstants.SURVEY_DONT_UNDERSTAND_PROMPT.lower():
                 return ResponsesConstants.SURVEY_DONT_UNDERSTAND_RESPONSE
