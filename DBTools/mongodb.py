@@ -19,27 +19,6 @@ def get_database_uri():
         
     return f"mongodb://{MONGO_USER}:{MONGO_PASS}@{MONGO_HOST}:{MONGO_PORT}/{MONGO_DB}?authSource=admin"
 
-# Create MongoDB client and database instance
-client = MongoClient(get_database_uri())
-db = client.get_database()
-
-def init_db():
-    """Initialize MongoDB database with collections and indexes"""
-    required_collections = {'ingredients', 'symptoms', 'users'}
-    existing_collections = set(db.list_collection_names())
-    
-    # Create missing collections
-    for col in required_collections - existing_collections:
-        db.create_collection(col)
-        print(f"Created collection: {col}")
-        
-    # Create indexes
-    db.ingredients.create_index([("userId", 1)])
-    db.symptoms.create_index([("timestamp", 1)])
-    db.users.create_index([("id", 1)], unique=True)
-    
-    print("MongoDB initialization complete")
-
 def get_db() -> Generator:
     """Dependency injection for database access"""
     try:
@@ -48,3 +27,48 @@ def get_db() -> Generator:
         print(f"MongoDB connection error: {e}")
         client.close()
         raise
+
+
+def init_db():
+    """Initialize MongoDB database with collections and indexes"""
+    print("Starting MongoDB initialization...")
+
+    required_collections = {'meals', 'symptoms', 'users'}
+    existing_collections = set(db.list_collection_names())
+    
+    # Create missing collections
+    for col in required_collections - existing_collections:
+        db.create_collection(col)
+        print(f"Created collection: {col}")
+        
+    # Create indexes with error handling
+    try:
+        result1 = db.meals.create_index([("userId", 1)])
+        print(f"Created ingredients userId index: {result1}")
+        
+        result2 = db.meals.create_index([("timestamp", 1)])
+        print(f"Created ingredients timestamp index: {result2}")
+        
+        result3 = db.symptoms.create_index([("userId", 1)])
+        print(f"Created symptoms userId index: {result3}")
+        
+        result4 = db.symptoms.create_index([("timestamp", 1)])
+        print(f"Created symptoms timestamp index: {result4}")
+        
+        result5 = db.users.create_index([("userId", 1)], unique=True)
+        print(f"Created users userId index: {result5}")
+        
+        # Verify indexes were created
+        print("Ingredients indexes:", db.ingredients.index_information())
+        print("Symptoms indexes:", db.symptoms.index_information())
+        print("Users indexes:", db.users.index_information())
+        
+    except Exception as e:
+        print(f"Error creating indexes: {e}")
+    
+    print("MongoDB initialization complete")
+
+
+# Create MongoDB client and database instance
+client = MongoClient(get_database_uri())
+db = client.get_database()

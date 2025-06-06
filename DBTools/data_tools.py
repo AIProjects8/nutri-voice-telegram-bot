@@ -2,27 +2,27 @@ from pymongo.errors import PyMongoError
 from pydantic import ValidationError
 from typing import List, Dict, Any
 
-from models import IngredientsCollection, UsersCollection, SymptomsCollection
+from models import MealCollection, UsersCollection, SymptomsCollection
 from mongodb import db
 
-def insert_ingredient(document: Dict[str, Any]) -> str:
-    """Validate and insert a single ingredient document."""
+def insert_meal(document: Dict[str, Any]) -> str:
+    """Validate and insert a single meal document."""
     try:
-        validated = IngredientsCollection(**document)
-        result = db.ingredients.insert_one(validated.model_dump())
+        validated = MealCollection(**document)
+        result = db.meals.insert_one(validated.model_dump())
         return str(result.inserted_id)
     except ValidationError as e:
-        print(f"Validation error (ingredient): {e}")
+        print(f"Validation error (meal): {e}")
         raise
     except PyMongoError as e:
-        print(f"MongoDB error (ingredient): {e}")
+        print(f"MongoDB error (meal): {e}")
         raise
 
-def insert_ingredients(documents: List[Dict[str, Any]]) -> List[str]:
-    """Validate and insert multiple ingredient documents."""
+def insert_meals(documents: List[Dict[str, Any]]) -> List[str]:
+    """Validate and insert multiple meals documents."""
     ids = []
     for doc in documents:
-        ids.append(insert_ingredient(doc))
+        ids.append(insert_meal(doc))
     return ids
 
 def insert_user(document: Dict[str, Any]) -> str:
