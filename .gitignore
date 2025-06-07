@@ -175,3 +175,5 @@ cython_debug/
 
 audio
 images
+
+.DS_Store

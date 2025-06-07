@@ -1,0 +1,130 @@
+from typing import Dict, Optional
+from Constants.prompts import PromptsConstants
+from Tools.openai_user_details_manager import OpenAIUserDetailsManager
+from Constants.responses import ResponsesConstants, ErrorResponsesConstants
+
+
+class SurveyState:
+    """Class to manage survey state for a user."""
+
+    def __init__(self):
+        self.current_question: int = 0
+        self.answers: Dict[str, str] = {}
+        self.awaiting_confirmation: bool = False
+        self.survey_started: bool = False
+
+
+class SurveyManager:
+
+    def __init__(self):
+        self._survey_states: Dict[str, SurveyState] = {}
+        self._user_details_manager = OpenAIUserDetailsManager()
+
+    def _get_survey_state(self, user_id: str) -> Optional[SurveyState]:
+        """Get survey state for a user if it exists."""
+        return self._survey_states.get(user_id)
+
+    def _create_survey_state(self, user_id: str) -> SurveyState:
+        """Create new survey state for a user."""
+        self._survey_states[user_id] = SurveyState()
+        return self._survey_states[user_id]
+
+    def _clear_survey_state(self, user_id: str) -> None:
+        """Clear survey state for a user."""
+        self._survey_states.pop(user_id, None)
+
+    def _start_survey(self, user_id: str) -> str:
+        """Start a new survey for a user."""
+        self._create_survey_state(user_id)
+        return ResponsesConstants.SURVEY_START_RESPONSE.format(question=ResponsesConstants.QUESTIONS[0])
+
+    def _format_survey_summary(self, answers: Dict[str, str]) -> str:
+        """Format survey answers into a readable summary."""
+        return "\n".join(f"- {q} : \n\t* {a}" for q, a in answers.items())
+
+    def _handle_awaiting_confirmation(self, user_id: str, message: str, state: SurveyState) -> str:
+        """Handle awaiting confirmation for a user."""
+        result = self._user_details_manager.confirm_user_details(
+            state.answers, message)
+        if result["success"]:
+            if result["action"] == "update" and result["changes"]:
+                summary = self._format_survey_summary(result["changes"])
+                # TODO: save the changes
+                # state.answers = summary
+                return ResponsesConstants.SURVEY_SUMMARY_RESPONSE.format(
+                    summary=summary)
+            elif result["action"] == "confirm_all":
+                self._user_details_manager.create_user_details_from_answers(
+                    state.answers, user_id)
+                self._clear_survey_state(user_id)
+                return ResponsesConstants.SAVED_USER_DETAILS_RESPONSE
+        else:
+            self._create_survey_state(user_id)
+            return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(error=result["error"])
+
+        # message = message.lower().strip()
+        # if message == "tak":
+        #     try:
+        #         saved = self._user_details_manager.create_user_details_from_answers(
+        #             state.answers, user_id)
+        #         if saved:
+        #             self._clear_survey_state(user_id)
+        #             return ResponsesConstants.SAVED_USER_DETAILS_RESPONSE
+        #         else:
+        #             self._create_survey_state(user_id)
+        #             return ErrorResponsesConstants.ERROR_SAVING_DATA_RESPONSE.format(question=ResponsesConstants.QUESTIONS[0])
+        #     except Exception as e:
+        #         self._create_survey_state(user_id)
+        #         return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(error=str(e))
+        # elif message == "nie":
+        #     self._create_survey_state(user_id)
+        #     return ResponsesConstants.SURVEY_START_RESPONSE_AGAIN.format(question=ResponsesConstants.QUESTIONS[0])
+        # else:
+        #     return ResponsesConstants.CONFIRM_USER_DETAILS_RESPONSE
+
+    def _handle_current_question(self, message: str, state: SurveyState) -> str:
+        """Handle the current question in the survey"""
+
+        try:
+            current_q = ResponsesConstants.QUESTIONS[state.current_question]
+            response = self._user_details_manager.ask_question(
+                current_q, message)
+
+            if response.lower() == PromptsConstants.SURVEY_DONT_UNDERSTAND_PROMPT.lower():
+                return ResponsesConstants.SURVEY_DONT_UNDERSTAND_RESPONSE
+
+            if response.lower() == PromptsConstants.SURVEY_PARSE_ERROR.lower():
+                return ResponsesConstants.SURVEY_PARSE_ERROR_RESPONSE
+
+            if response == PromptsConstants.SURVEY_PROMPT_ERROR:
+                return ResponsesConstants.SURVEY_PROMPT_ERROR_RESPONSE
+
+            # Save answer and move to next question
+            state.answers[current_q] = response
+            state.current_question += 1
+
+            # Check if survey is complete
+            if state.current_question >= len(ResponsesConstants.QUESTIONS):
+                state.awaiting_confirmation = True
+                summary = self._format_survey_summary(state.answers)
+                return ResponsesConstants.SURVEY_SUMMARY_RESPONSE.format(summary=summary)
+
+            # Return next question
+            return ResponsesConstants.QUESTIONS[state.current_question]
+
+        except Exception as e:
+            return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(error=str(e))
+
+    def process_survey_message(self, user_id: str, message: str) -> str:
+        """Process a message in the survey context"""
+
+        state = self._get_survey_state(user_id)
+        if state is None:
+            return self._start_survey(user_id)
+
+        # If awaiting confirmation
+        if state.awaiting_confirmation:
+            return self._handle_awaiting_confirmation(user_id, message, state)
+
+        # Process current question
+        return self._handle_current_question(message, state)
