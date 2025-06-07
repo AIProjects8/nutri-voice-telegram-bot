@@ -54,10 +54,10 @@ class SurveyManager:
                     return ResponsesConstants.SAVED_USER_DETAILS_RESPONSE
                 else:
                     self._create_survey_state(user_id)
-                    return ErrorResponsesConstants.ERROR_SAVING_DATA_RESPONSE.format(question=QUESTIONS[0])
+                    return ErrorResponsesConstants.ERROR_SAVING_DATA_RESPONSE.format(question=ResponsesConstants.QUESTIONS[0])
             except Exception as e:
                 self._create_survey_state(user_id)
-                return ErrorResponsesConstants.ERROR_RESPONSE.format(error=str(e))
+                return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(error=str(e))
         elif message == "nie":
             self._create_survey_state(user_id)
             return ResponsesConstants.SURVEY_START_RESPONSE_AGAIN.format(question=ResponsesConstants.QUESTIONS[0])
@@ -75,6 +75,9 @@ class SurveyManager:
             if response.lower() == PromptsConstants.SURVEY_DONT_UNDERSTAND_PROMPT.lower():
                 return ResponsesConstants.SURVEY_DONT_UNDERSTAND_RESPONSE
 
+            if response == PromptsConstants.SURVEY_PROMPT_ERROR:
+                return ResponsesConstants.SURVEY_PROMPT_ERROR_RESPONSE
+
             # Save answer and move to next question
             state.answers[current_q] = response
             state.current_question += 1
@@ -89,7 +92,7 @@ class SurveyManager:
             return ResponsesConstants.QUESTIONS[state.current_question]
 
         except Exception as e:
-            return ErrorResponsesConstants.ERROR_RESPONSE.format(error=str(e))
+            return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(error=str(e))
 
     def process_survey_message(self, user_id: str, message: str) -> str:
         """Process a message in the survey context"""

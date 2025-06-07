@@ -12,7 +12,7 @@ Proszę odpowiedzieć na pytania.
 
 {question}
 """
-
+    SURVEY_PROMPT_ERROR_RESPONSE = "⚠️ Przepraszam, wystąpił błąd podczas przetwarzania odpowiedzi. Proszę spróbować ponownie."
     SURVEY_START_RESPONSE_AGAIN = """
 Zacznijmy od nowa.
 
@@ -29,8 +29,9 @@ Zacznijmy od nowa.
 
 class ErrorResponsesConstants:
 
-    ERROR_RESPONSE = "Wystąpił nieoczekiwany błąd: {error}"
-
+    ERROR_RESPONSE_SAVING_DATA = "Wystąpił nieoczekiwany błąd podczas zapisywania danych."
+    ERROR_RESPONSE_PROCESS = "Wystąpił nieoczekiwany błąd podczas przetwarzania odpowiedzi."
+    DEBUG_ERROR_RESPONSE = "Wystąpił nieoczekiwany błąd podczas przetwarzania odpowiedzi. {error}"
     ERROR_SAVING_DATA_RESPONSE = """
 Wystąpił błąd podczas zapisywania danych.
 Proszę spróbować ponownie.
