@@ -44,25 +44,43 @@ class SurveyManager:
 
     def _handle_awaiting_confirmation(self, user_id: str, message: str, state: SurveyState) -> str:
         """Handle awaiting confirmation for a user."""
-        message = message.lower().strip()
-        if message == "tak":
-            try:
-                saved = self._user_details_manager.create_user_details_from_answers(
+        result = self._user_details_manager.confirm_user_details(
+            state.answers, message)
+        if result["success"]:
+            if result["action"] == "update" and result["changes"]:
+                summary = self._format_survey_summary(result["changes"])
+                # TODO: save the changes
+                # state.answers = summary
+                return ResponsesConstants.SURVEY_SUMMARY_RESPONSE.format(
+                    summary=summary)
+            elif result["action"] == "confirm_all":
+                self._user_details_manager.create_user_details_from_answers(
                     state.answers, user_id)
-                if saved:
-                    self._clear_survey_state(user_id)
-                    return ResponsesConstants.SAVED_USER_DETAILS_RESPONSE
-                else:
-                    self._create_survey_state(user_id)
-                    return ErrorResponsesConstants.ERROR_SAVING_DATA_RESPONSE.format(question=ResponsesConstants.QUESTIONS[0])
-            except Exception as e:
-                self._create_survey_state(user_id)
-                return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(error=str(e))
-        elif message == "nie":
-            self._create_survey_state(user_id)
-            return ResponsesConstants.SURVEY_START_RESPONSE_AGAIN.format(question=ResponsesConstants.QUESTIONS[0])
+                self._clear_survey_state(user_id)
+                return ResponsesConstants.SAVED_USER_DETAILS_RESPONSE
         else:
-            return ResponsesConstants.CONFIRM_USER_DETAILS_RESPONSE
+            self._create_survey_state(user_id)
+            return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(error=result["error"])
+
+        # message = message.lower().strip()
+        # if message == "tak":
+        #     try:
+        #         saved = self._user_details_manager.create_user_details_from_answers(
+        #             state.answers, user_id)
+        #         if saved:
+        #             self._clear_survey_state(user_id)
+        #             return ResponsesConstants.SAVED_USER_DETAILS_RESPONSE
+        #         else:
+        #             self._create_survey_state(user_id)
+        #             return ErrorResponsesConstants.ERROR_SAVING_DATA_RESPONSE.format(question=ResponsesConstants.QUESTIONS[0])
+        #     except Exception as e:
+        #         self._create_survey_state(user_id)
+        #         return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(error=str(e))
+        # elif message == "nie":
+        #     self._create_survey_state(user_id)
+        #     return ResponsesConstants.SURVEY_START_RESPONSE_AGAIN.format(question=ResponsesConstants.QUESTIONS[0])
+        # else:
+        #     return ResponsesConstants.CONFIRM_USER_DETAILS_RESPONSE
 
     def _handle_current_question(self, message: str, state: SurveyState) -> str:
         """Handle the current question in the survey"""
@@ -74,6 +92,9 @@ class SurveyManager:
 
             if response.lower() == PromptsConstants.SURVEY_DONT_UNDERSTAND_PROMPT.lower():
                 return ResponsesConstants.SURVEY_DONT_UNDERSTAND_RESPONSE
+
+            if response.lower() == PromptsConstants.SURVEY_PARSE_ERROR.lower():
+                return ResponsesConstants.SURVEY_PARSE_ERROR_RESPONSE
 
             if response == PromptsConstants.SURVEY_PROMPT_ERROR:
                 return ResponsesConstants.SURVEY_PROMPT_ERROR_RESPONSE

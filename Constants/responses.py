@@ -13,6 +13,7 @@ Proszę odpowiedzieć na pytania.
 {question}
 """
     SURVEY_PROMPT_ERROR_RESPONSE = "⚠️ Przepraszam, wystąpił błąd podczas przetwarzania odpowiedzi. Proszę spróbować ponownie."
+    SURVEY_PARSE_ERROR_RESPONSE = "⚠️ Odpowiedź jest niedozwolona. Proszę spróbować ponownie."
     SURVEY_START_RESPONSE_AGAIN = """
 Zacznijmy od nowa.
 

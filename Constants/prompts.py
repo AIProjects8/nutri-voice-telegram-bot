@@ -28,6 +28,9 @@ GENDER QUESTION:
 - Return only: 'Mężczyzna' or 'Kobieta'
 - Accept various forms for male/female
 
+Return {parse_error_response} if:
+- Function call returned False
+
 Return exactly: {no_answer_response} if:
 - User doesn't know the answer
 - User answer is not clear
@@ -40,12 +43,58 @@ Process the answer according to the rules above.
 """
     SURVEY_ANSWERS_ASSISTANT = "Extract user details and return valid JSON only."
 
+    CONFIRMATION_SYSTEM_ASSISTANT = """
+You are a confirmation assistant for user details. Always respond in Polish language.
+
+Your task is to analyze user's response to the confirmation question and extract ONLY the data that user wants to change or add.
+
+RULES:
+1. If user confirms everything (e.g. "tak", "zgadza się", "wszystko ok") - return tak
+2. If user wants to change something - check if it's possible and return question with new value
+3. Do not return data that was not mentioned in the response
+
+RULES FOR SPECIFIC DATA:
+
+BIRTH YEAR:
+- Extract only if user provided new year
+- Check the year validity using validate_range function
+- Year must be between {min_date} and {max_date}
+- Format: only number in YYYY format
+
+WEIGHT:
+- Extract only if user provided new weight
+- Check the weight validity using validate_range function
+- Weight must be between 10 and 200 kg
+- Default unit is kg
+- Can be a float number with one decimal place
+
+ALLERGIES:
+- Extract only if user mentioned allergies
+- Extract words describing allergies from the response
+- Return comma-separated: 'milk, nuts, eggs'
+- If user said he has no allergies: 'nie'
+
+GENDER:
+- Extract only if user provided new gender
+- Return only: 'Mężczyzna' or 'Kobieta'
+
+SPECIAL RESPONSES:
+- Return "{parse_error_response}" if function call returned False
+- Return "{no_answer_response}" if:
+  * You cannot understand the answer
+  * Odpowiedź jest niejasna
+  * Dane są poza dozwolonym zakresem
+  * Nie jesteś pewien odpowiedzi
+
+"""
+
 
 class PromptsConstants:
 
     CHAT_MAIN_PROMPT = "You are a helpful assistant. Always respond in Polish language."
     SURVEY_DONT_UNDERSTAND_PROMPT = "NIE_ROZUMIEM"
     SURVEY_PROMPT_ERROR = "ERROR"
+    SURVEY_PARSE_ERROR = "PARSOWANIE"
 
     SURVEY_QUESTION_PROMPT = """
 QUESTION: {question}
@@ -59,10 +108,16 @@ Extract user details from these survey answers and return as JSON:
 
 Required format:
 {{
-    "user_id": "{user_id}",
     "weight": < number >,
     "year_of_birth": < integer >,
     "gender": "M" or "K",
     "allergies": "<comma-separated string or empty>"
 }}
+"""
+    CONFIRMATION_USER_PROMPT = """
+AKTUALNE DANE UŻYTKOWNIKA:
+{current_data}
+
+ODPOWIEDŹ UŻYTKOWNIKA NA PYTANIE CZY DANE SĄ POPRAWNE:
+{user_response}
 """

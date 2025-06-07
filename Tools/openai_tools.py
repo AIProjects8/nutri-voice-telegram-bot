@@ -1,7 +1,5 @@
 import openai
 from config import Config
-from openai.types.responses.response_function_tool_call import ResponseFunctionToolCall
-import json
 from Constants.tools import ToolsConstants
 
 
