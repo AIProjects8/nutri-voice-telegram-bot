@@ -10,7 +10,7 @@ BIRTH YEAR QUESTION:
 - Return only the year in YYYY format
 - Birth year should be between {min_date} and {max_date}
 - Check the year validaty by validate_birth_year function
-- Require 4 digits year format from the user answer
+- Require 4 digits year format from the user answer example: 2009, I was born in 2009, etc.
 
 WEIGHT QUESTION:
 - Return only the weight in kg (number only)
@@ -19,8 +19,10 @@ WEIGHT QUESTION:
 - Weigh can be a float number with one decimal place
 
 ALLERGIES QUESTION:
-- Find allergies and return them separated by commas. Example: 'milk, nuts, eggs'
-- If user says he has no allergies, return: nie
+- Find allergies from user answer. Allergies are words that describe what user is allergic to.
+- User can write allergies in various forms using , or spaces or description and sentences.
+- Return them separated extracted from user answer by commas. Example output: 'mleko, orzechy, jajka'
+- If user said he has no allergies, return: nie
 
 GENDER QUESTION:
 - Return only: 'Mężczyzna' or 'Kobieta'
