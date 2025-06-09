@@ -1,53 +1,73 @@
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Union
-from openai.types.responses.response_function_tool_call import ResponseFunctionToolCall
 import json
-from Constants.settings import SettingsConstants
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Union
+
+from openai.types.responses.response_function_tool_call import ResponseFunctionToolCall
+
+from Constants.const import Constants
 from Tools.openai_tools import OpenAIClient
 
 
 @dataclass
 class OpenAIMessage:
+    """Represents a message in the OpenAI conversation."""
     role: str
     content: str
 
     def to_dict(self) -> Dict[str, str]:
+        """Convert message to dictionary format."""
         return {"role": self.role, "content": self.content}
 
 
 @dataclass
 class OpenAIRequestConfig:
+    """Configuration for OpenAI API requests."""
     model: str
-    temperature: float = SettingsConstants.DEFAULT_TEMPERATURE
+    temperature: float = Constants.DEFAULT_TEMPERATURE
     max_tokens: Optional[int] = None
     tools: Optional[List[Dict]] = None
-    max_retries: int = SettingsConstants.DEFAULT_MAX_REQUESTS
+    max_retries: int = Constants.DEFAULT_MAX_REQUESTS
+
+
+class OpenAIResponse:
+    """Represents a response from OpenAI API."""
+
+    def __init__(self, success: bool, response_text: Optional[str] = None,
+                 full_response: Any = None, error: Optional[str] = None,
+                 parsed_json: Optional[Dict] = None):
+        self.success = success
+        self.response_text = response_text
+        self.full_response = full_response
+        self.error = error
+        self.parsed_json = parsed_json
+
+    @classmethod
+    def success(cls, response_text: str, full_response: Any = None,
+                parsed_json: Optional[Dict] = None) -> 'OpenAIResponse':
+        """Create a successful response."""
+        return cls(True, response_text, full_response, None, parsed_json)
+
+    @classmethod
+    def error(cls, error: str) -> 'OpenAIResponse':
+        """Create an error response."""
+        return cls(False, None, None, error, None)
 
 
 class GeneralOpenAIHandler:
-    """
-    A general-purpose handler for OpenAI API requests with optional function calling support.
-    """
+    """A general-purpose handler for OpenAI API requests with optional function calling support."""
 
     def __init__(self):
         self.client = OpenAIClient.get_instance().client
 
     def create_message(self, role: str, content: str) -> OpenAIMessage:
-        """Helper method to create properly formatted messages."""
+        """Create a properly formatted message."""
         return OpenAIMessage(role=role, content=content)
 
     def _execute_function_calls(self,
                                 function_calls: List[ResponseFunctionToolCall],
                                 messages: List[Dict],
                                 function_handler: callable) -> None:
-        """
-        Execute function calls and append results to message history.
-
-        Args:
-            function_calls: List of function calls from OpenAI response
-            messages: Message history to append to
-            function_handler: Function to handle the actual function execution
-        """
+        """Execute function calls and append results to message history."""
         for tool_call in function_calls:
             if tool_call.type != "function_call":
                 continue
@@ -55,7 +75,6 @@ class GeneralOpenAIHandler:
             try:
                 function_name = tool_call.name
                 function_args = json.loads(tool_call.arguments)
-
                 result = function_handler(function_name, function_args)
 
                 messages.append(tool_call)
@@ -73,46 +92,39 @@ class GeneralOpenAIHandler:
                     "output": f"Error executing function: {str(e)}"
                 })
 
-    def make_request(self,
-                     messages: List[Union[OpenAIMessage, Dict]],
-                     config: OpenAIRequestConfig,
-                     function_handler: Optional[callable] = None) -> Dict[str, Any]:
-        """
-        Make a general OpenAI request with optional function calling.
+    def _format_messages(self, messages: List[Union[OpenAIMessage, Dict]]) -> List[Dict]:
+        """Format messages for API request."""
+        return [msg.to_dict() if isinstance(msg, OpenAIMessage) else msg for msg in messages]
 
-        Args:
-            messages: List of messages (can be OpenAIMessage objects or dicts)
-            config: Configuration for the request
-            function_handler: Optional function to handle function calls
-
-        Returns:
-            Dict containing success status, response text, and any errors
-        """
-        formatted_messages = []
-        for msg in messages:
-            if isinstance(msg, OpenAIMessage):
-                formatted_messages.append(msg.to_dict())
-            else:
-                formatted_messages.append(msg)
-
-        # Prepare request parameters
-        request_params = {
+    def _prepare_request_params(self, config: OpenAIRequestConfig,
+                                formatted_messages: List[Dict]) -> Dict[str, Any]:
+        """Prepare request parameters for API call."""
+        params = {
             "model": config.model,
             "input": formatted_messages,
             "temperature": config.temperature
         }
 
         if config.max_tokens:
-            request_params["max_tokens"] = config.max_tokens
+            params["max_tokens"] = config.max_tokens
         if config.tools:
-            request_params["tools"] = config.tools
+            params["tools"] = config.tools
 
-        # Attempt the request with retries
+        return params
+
+    def make_request(self,
+                     messages: List[Union[OpenAIMessage, Dict]],
+                     config: OpenAIRequestConfig,
+                     function_handler: Optional[callable] = None) -> OpenAIResponse:
+        """Make a general OpenAI request with optional function calling."""
+        formatted_messages = self._format_messages(messages)
+        request_params = self._prepare_request_params(
+            config, formatted_messages)
+
         for attempt in range(config.max_retries):
             try:
                 response = self.client.responses.create(**request_params)
 
-                # Handle function calls if present and handler provided
                 if response.output and function_handler:
                     self._execute_function_calls(
                         response.output,
@@ -123,47 +135,24 @@ class GeneralOpenAIHandler:
                 if not response.output_text:
                     continue
 
-                return {
-                    "success": True,
-                    "response_text": response.output_text,
-                    "full_response": response,
-                    "error": None
-                }
+                return OpenAIResponse.success(
+                    response_text=response.output_text,
+                    full_response=response
+                )
 
             except Exception as e:
-                if attempt == config.max_retries - 1:  # Last attempt
-                    return {
-                        "success": False,
-                        "response_text": None,
-                        "full_response": None,
-                        "error": str(e)
-                    }
+                if attempt == config.max_retries - 1:
+                    return OpenAIResponse.error(str(e))
                 continue
 
-        return {
-            "success": False,
-            "response_text": None,
-            "full_response": None,
-            "error": "Max retries exceeded"
-        }
+        return OpenAIResponse.error("Osiagnieto maksymalna liczbe prob")
 
     def make_simple_request(self,
                             system_prompt: str,
                             user_prompt: str,
                             model: str,
-                            temperature: float = 0.0) -> Dict[str, Any]:
-        """
-        Simplified method for basic requests without function calling.
-
-        Args:
-            system_prompt: System message content
-            user_prompt: User message content  
-            model: Model to use
-            temperature: Temperature setting
-
-        Returns:
-            Dict containing success status and response
-        """
+                            temperature: float = 0.0) -> OpenAIResponse:
+        """Make a simple request without function calling."""
         messages = [
             self.create_message("system", system_prompt),
             self.create_message("user", user_prompt)
@@ -176,41 +165,37 @@ class GeneralOpenAIHandler:
 
         return self.make_request(messages, config)
 
+    def _parse_json_response(self, content: str) -> Optional[Dict]:
+        """Parse JSON from response content."""
+        try:
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            return json.loads(content)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse JSON response: {str(e)}")
+
     def make_json_request(self,
                           system_prompt: str,
                           user_prompt: str,
                           model: str,
-                          temperature: float = 0.0) -> Dict[str, Any]:
-        """
-        Make a request expecting JSON response and parse it.
-
-        Args:
-            system_prompt: System message content
-            user_prompt: User message content
-            model: Model to use  
-            temperature: Temperature setting
-
-        Returns:
-            Dict containing success status, parsed JSON, and any errors
-        """
+                          temperature: float = 0.0) -> OpenAIResponse:
+        """Make a request expecting JSON response and parse it."""
         result = self.make_simple_request(
             system_prompt, user_prompt, model, temperature)
 
-        if result["success"] and result["response_text"]:
+        if result.success and result.response_text:
             try:
-                content = result["response_text"].strip()
-                if content.startswith('```json'):
-                    content = content[7:]  # Remove ```json
-                if content.endswith('```'):
-                    content = content[:-3]  # Remove trailing ```
-                content = content.strip()  # Remove any extra whitespace
-                parsed_json = json.loads(content)
-                result["parsed_json"] = parsed_json
-            except json.JSONDecodeError as e:
-                result["success"] = False
-                result["error"] = f"Failed to parse JSON response: {str(e)}"
-                result["parsed_json"] = None
-        else:
-            result["parsed_json"] = None
+                parsed_json = self._parse_json_response(result.response_text)
+                return OpenAIResponse.success(
+                    response_text=result.response_text,
+                    full_response=result.full_response,
+                    parsed_json=parsed_json
+                )
+            except ValueError as e:
+                return OpenAIResponse.error(str(e))
 
         return result

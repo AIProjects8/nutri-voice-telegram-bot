@@ -1,4 +1,0 @@
-class SettingsConstants:
-    DEFAULT_TEMPERATURE = 0.0
-    DEFAULT_MAX_REQUESTS = 1
-    MAX_SURVEY_REQUESTS = 2

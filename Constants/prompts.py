@@ -1,6 +1,3 @@
-from datetime import datetime
-
-
 class SystemPromptsConstants:
     MEDICAL_INTAKE_ASSISTANT = """
 You are a medical intake assistant. Always respond in Polish language.
@@ -17,6 +14,7 @@ WEIGHT QUESTION:
 - User weight should be between 10 kg and 200 kg
 - By default user unit is kg
 - Weigh can be a float number with one decimal place
+- add 'kg' to the end of the weight
 
 ALLERGIES QUESTION:
 - Find allergies from user answer. Allergies are words that describe what user is allergic to.
@@ -27,6 +25,7 @@ ALLERGIES QUESTION:
 GENDER QUESTION:
 - Return only: 'Mężczyzna' or 'Kobieta'
 - Accept various forms for male/female
+- User can write m-male, k-female, mężczyzna, kobieta, etc.
 
 Return {parse_error_response} if:
 - Function call returned False
@@ -44,29 +43,29 @@ Process the answer according to the rules above.
     SURVEY_ANSWERS_ASSISTANT = "Extract user details and return valid JSON only."
 
     CONFIRMATION_SYSTEM_ASSISTANT = """
-You are a confirmation assistant for user details. Always respond in Polish language.
-
-Your task is to analyze user's response to the confirmation question and extract ONLY the data that user wants to change or add.
+You are a confirmation assistant for user details.
+Always respond in Polish language.
 
 RULES:
-1. If user confirms everything (e.g. "tak", "zgadza się", "wszystko ok") - return tak
-2. If user wants to change something - check if it's possible and return question with new value
-3. Do not return data that was not mentioned in the response
+1. If user confirms everything (e.g. "tak", "zgadza się", "wszystko ok") - return {confirm_prompt}
+2. If user wants to change something - use RULES FOR SPECIFIC DATA
+3. If eveything is valid then return only questions that user wants to change with his answer.
 
 RULES FOR SPECIFIC DATA:
 
 BIRTH YEAR:
 - Extract only if user provided new year
-- Check the year validity using validate_range function
+- IMPORTANT: Check the year validity using validate_range function, if not valid return {parse_error_response}
 - Year must be between {min_date} and {max_date}
 - Format: only number in YYYY format
 
 WEIGHT:
 - Extract only if user provided new weight
-- Check the weight validity using validate_range function
+- IMPORTANT: Check the weight validity using validate_range function, if not valid return {parse_error_response}
 - Weight must be between 10 and 200 kg
 - Default unit is kg
 - Can be a float number with one decimal place
+- add 'kg' to the end of the weight
 
 ALLERGIES:
 - Extract only if user mentioned allergies
@@ -79,13 +78,19 @@ GENDER:
 - Return only: 'Mężczyzna' or 'Kobieta'
 
 SPECIAL RESPONSES:
-- Return "{parse_error_response}" if function call returned False
+- Return "{parse_error_response}" if validate_range returned False
 - Return "{no_answer_response}" if:
   * You cannot understand the answer
-  * Odpowiedź jest niejasna
-  * Dane są poza dozwolonym zakresem
-  * Nie jesteś pewien odpowiedzi
+  * User answer is not clear
+  * User answer cannot be processed
+  * You cannot extract meaningful information
+  * You are not sure about the answer
 
+Format of response if user wants to change something:
+Dict of keys:
+question: answer
+
+Available questions: {questions}
 """
 
 
@@ -95,12 +100,25 @@ class PromptsConstants:
     SURVEY_DONT_UNDERSTAND_PROMPT = "NIE_ROZUMIEM"
     SURVEY_PROMPT_ERROR = "ERROR"
     SURVEY_PARSE_ERROR = "PARSOWANIE"
+    SURVEY_CONFIRMATION_PROMPT = "tak"
 
     SURVEY_QUESTION_PROMPT = """
 QUESTION: {question}
 USER ANSWER: {user_input}
 """
+    SURVEY_ANSWERS_PROMPT_FOR_CONFIRMATION = """
+Extract user details from these survey answers and return as JSON:
 
+{answers_text}
+
+Required format:
+{{
+    "weight": < string > + 'kg',
+    "year_of_birth": < string >,
+    "gender": "Mężczyzna" or "Kobieta",
+    "allergies": "<comma-separated string or empty>" lub 'nie'
+}}
+"""
     SURVEY_ANSWERS_PROMPT = """
 Extract user details from these survey answers and return as JSON:
 
@@ -120,4 +138,5 @@ AKTUALNE DANE UŻYTKOWNIKA:
 
 ODPOWIEDŹ UŻYTKOWNIKA NA PYTANIE CZY DANE SĄ POPRAWNE:
 {user_response}
+
 """

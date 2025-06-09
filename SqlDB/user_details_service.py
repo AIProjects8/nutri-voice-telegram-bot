@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session
-from .models import UserDetails
+from sqlalchemy.orm import Session, class_mapper
+
 from .database import get_db
+from .models import UserDetails
 
 
 def create_user_details(user_id: str, weight: float, year_of_birth: int, gender: str, allergies: str) -> UserDetails:
