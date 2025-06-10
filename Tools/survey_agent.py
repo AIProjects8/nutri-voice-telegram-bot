@@ -94,15 +94,23 @@ class SurveyManager:
     def _format_survey_summary(self, answers: Dict[str, str]) -> str:
         """Format survey answers into a readable summary."""
         questions = Constants.QUESTIONS
-        return "\n".join(f"- {questions[index]} : \n\t{a}" for index, a in enumerate(answers.values()))
+        return "\n".join(
+            f"- {questions[index]} : \n\t{a}"
+            for index, a in enumerate(answers.values())
+        )
 
-    def _handle_awaiting_confirmation(self, user_id: str, message: str, state: SurveyState) -> str:
+    def _handle_awaiting_confirmation(
+        self, user_id: str, message: str, state: SurveyState
+    ) -> str:
         """Handle awaiting confirmation for a user."""
         response = self._user_details_manager.confirm_user_details(
-            state.answers, message)
+            state.answers, message
+        )
 
         if not response.success:
-            return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(error=response.error)
+            return ErrorResponsesConstants.DEBUG_ERROR_RESPONSE.format(
+                error=response.error
+            )
 
         if response.action == Constants.ACTION_UPDATE and response.changes:
             state.update_answers(response.changes)
@@ -113,7 +121,8 @@ class SurveyManager:
 
         if response.action == Constants.ACTION_CONFIRM_ALL:
             self._user_details_manager.create_user_details_from_answers(
-                state.answers, user_id)
+                state.answers, user_id
+            )
             self._clear_survey_state(user_id)
             return ResponsesConstants.SAVED_USER_DETAILS_RESPONSE
 
@@ -138,8 +147,7 @@ class SurveyManager:
         """Handle the current question in the survey."""
         try:
             current_q = state.get_current_question()
-            response = self._user_details_manager.ask_question(
-                current_q, message)
+            response = self._user_details_manager.ask_question(current_q, message)
 
             special_response = self._handle_special_responses(response)
             if special_response:

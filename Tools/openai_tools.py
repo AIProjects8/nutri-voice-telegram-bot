@@ -26,7 +26,9 @@ class OpenAIClient:
 
 class OpenAITools:
 
-    def validate_range(value: int | float, min_value: int | float, max_value: int | float) -> bool:
+    def validate_range(
+        value: int | float, min_value: int | float, max_value: int | float
+    ) -> bool:
         """Validates if a value is within the specified range."""
         return min_value <= value <= max_value
 
@@ -36,7 +38,7 @@ class OpenAITools:
         result = OpenAITools.validate_range(
             value=args["value"],
             min_value=args["min_value"],
-            max_value=args["max_value"]
+            max_value=args["max_value"],
         )
 
         return result

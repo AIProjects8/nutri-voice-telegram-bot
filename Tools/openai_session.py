@@ -11,6 +11,7 @@ from Tools.openai_tools import OpenAIClient
 @dataclass
 class OpenAIMessage:
     """Represents a message in the OpenAI conversation."""
+
     role: str
     content: str
 
@@ -22,6 +23,7 @@ class OpenAIMessage:
 @dataclass
 class OpenAIRequestConfig:
     """Configuration for OpenAI API requests."""
+
     model: str
     temperature: float = Constants.DEFAULT_TEMPERATURE
     max_tokens: Optional[int] = None
@@ -32,9 +34,14 @@ class OpenAIRequestConfig:
 class OpenAIResponse:
     """Represents a response from OpenAI API."""
 
-    def __init__(self, success: bool, response_text: Optional[str] = None,
-                 full_response: Any = None, error: Optional[str] = None,
-                 parsed_json: Optional[Dict] = None):
+    def __init__(
+        self,
+        success: bool,
+        response_text: Optional[str] = None,
+        full_response: Any = None,
+        error: Optional[str] = None,
+        parsed_json: Optional[Dict] = None,
+    ):
         self.success = success
         self.response_text = response_text
         self.full_response = full_response
@@ -42,13 +49,17 @@ class OpenAIResponse:
         self.parsed_json = parsed_json
 
     @classmethod
-    def success(cls, response_text: str, full_response: Any = None,
-                parsed_json: Optional[Dict] = None) -> 'OpenAIResponse':
+    def success(
+        cls,
+        response_text: str,
+        full_response: Any = None,
+        parsed_json: Optional[Dict] = None,
+    ) -> "OpenAIResponse":
         """Create a successful response."""
         return cls(True, response_text, full_response, None, parsed_json)
 
     @classmethod
-    def error(cls, error: str) -> 'OpenAIResponse':
+    def error(cls, error: str) -> "OpenAIResponse":
         """Create an error response."""
         return cls(False, None, None, error, None)
 
@@ -63,10 +74,12 @@ class GeneralOpenAIHandler:
         """Create a properly formatted message."""
         return OpenAIMessage(role=role, content=content)
 
-    def _execute_function_calls(self,
-                                function_calls: List[ResponseFunctionToolCall],
-                                messages: List[Dict],
-                                function_handler: callable) -> None:
+    def _execute_function_calls(
+        self,
+        function_calls: List[ResponseFunctionToolCall],
+        messages: List[Dict],
+        function_handler: callable,
+    ) -> None:
         """Execute function calls and append results to message history."""
         for tool_call in function_calls:
             if tool_call.type != "function_call":
@@ -78,31 +91,40 @@ class GeneralOpenAIHandler:
                 result = function_handler(function_name, function_args)
 
                 messages.append(tool_call)
-                messages.append({
-                    "type": "function_call_output",
-                    "call_id": tool_call.call_id,
-                    "output": str(result)
-                })
+                messages.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": tool_call.call_id,
+                        "output": str(result),
+                    }
+                )
 
             except Exception as e:
                 messages.append(tool_call)
-                messages.append({
-                    "type": "function_call_output",
-                    "call_id": tool_call.call_id,
-                    "output": f"Error executing function: {str(e)}"
-                })
+                messages.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": tool_call.call_id,
+                        "output": f"Error executing function: {str(e)}",
+                    }
+                )
 
-    def _format_messages(self, messages: List[Union[OpenAIMessage, Dict]]) -> List[Dict]:
+    def _format_messages(
+        self, messages: List[Union[OpenAIMessage, Dict]]
+    ) -> List[Dict]:
         """Format messages for API request."""
-        return [msg.to_dict() if isinstance(msg, OpenAIMessage) else msg for msg in messages]
+        return [
+            msg.to_dict() if isinstance(msg, OpenAIMessage) else msg for msg in messages
+        ]
 
-    def _prepare_request_params(self, config: OpenAIRequestConfig,
-                                formatted_messages: List[Dict]) -> Dict[str, Any]:
+    def _prepare_request_params(
+        self, config: OpenAIRequestConfig, formatted_messages: List[Dict]
+    ) -> Dict[str, Any]:
         """Prepare request parameters for API call."""
         params = {
             "model": config.model,
             "input": formatted_messages,
-            "temperature": config.temperature
+            "temperature": config.temperature,
         }
 
         if config.max_tokens:
@@ -112,14 +134,15 @@ class GeneralOpenAIHandler:
 
         return params
 
-    def make_request(self,
-                     messages: List[Union[OpenAIMessage, Dict]],
-                     config: OpenAIRequestConfig,
-                     function_handler: Optional[callable] = None) -> OpenAIResponse:
+    def make_request(
+        self,
+        messages: List[Union[OpenAIMessage, Dict]],
+        config: OpenAIRequestConfig,
+        function_handler: Optional[callable] = None,
+    ) -> OpenAIResponse:
         """Make a general OpenAI request with optional function calling."""
         formatted_messages = self._format_messages(messages)
-        request_params = self._prepare_request_params(
-            config, formatted_messages)
+        request_params = self._prepare_request_params(config, formatted_messages)
 
         for attempt in range(config.max_retries):
             try:
@@ -127,17 +150,14 @@ class GeneralOpenAIHandler:
 
                 if response.output and function_handler:
                     self._execute_function_calls(
-                        response.output,
-                        formatted_messages,
-                        function_handler
+                        response.output, formatted_messages, function_handler
                     )
 
                 if not response.output_text:
                     continue
 
                 return OpenAIResponse.success(
-                    response_text=response.output_text,
-                    full_response=response
+                    response_text=response.output_text, full_response=response
                 )
 
             except Exception as e:
@@ -147,15 +167,13 @@ class GeneralOpenAIHandler:
 
         return OpenAIResponse.error("Osiagnieto maksymalna liczbe prob")
 
-    def make_simple_request(self,
-                            system_prompt: str,
-                            user_prompt: str,
-                            model: str,
-                            temperature: float = 0.0) -> OpenAIResponse:
+    def make_simple_request(
+        self, system_prompt: str, user_prompt: str, model: str, temperature: float = 0.0
+    ) -> OpenAIResponse:
         """Make a simple request without function calling."""
         messages = [
             self.create_message("system", system_prompt),
-            self.create_message("user", user_prompt)
+            self.create_message("user", user_prompt),
         ]
 
         config = OpenAIRequestConfig(
@@ -169,23 +187,22 @@ class GeneralOpenAIHandler:
         """Parse JSON from response content."""
         try:
             content = content.strip()
-            if content.startswith('```json'):
+            if content.startswith("```json"):
                 content = content[7:]
-            if content.endswith('```'):
+            if content.endswith("```"):
                 content = content[:-3]
             content = content.strip()
             return json.loads(content)
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse JSON response: {str(e)}")
 
-    def make_json_request(self,
-                          system_prompt: str,
-                          user_prompt: str,
-                          model: str,
-                          temperature: float = 0.0) -> OpenAIResponse:
+    def make_json_request(
+        self, system_prompt: str, user_prompt: str, model: str, temperature: float = 0.0
+    ) -> OpenAIResponse:
         """Make a request expecting JSON response and parse it."""
         result = self.make_simple_request(
-            system_prompt, user_prompt, model, temperature)
+            system_prompt, user_prompt, model, temperature
+        )
 
         if result.success and result.response_text:
             try:
@@ -193,7 +210,7 @@ class GeneralOpenAIHandler:
                 return OpenAIResponse.success(
                     response_text=result.response_text,
                     full_response=result.full_response,
-                    parsed_json=parsed_json
+                    parsed_json=parsed_json,
                 )
             except ValueError as e:
                 return OpenAIResponse.error(str(e))

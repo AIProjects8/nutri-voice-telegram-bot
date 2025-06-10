@@ -12,19 +12,19 @@ class ToolDescriptionConstants:
             "properties": {
                 "value": {
                     "type": "number",
-                    "description": "The number to validate (float or integer)"
+                    "description": "The number to validate (float or integer)",
                 },
                 "min_value": {
                     "type": "number",
-                    "description": "Minimum allowed number (float or integer)"
+                    "description": "Minimum allowed number (float or integer)",
                 },
                 "max_value": {
                     "type": "number",
-                    "description": "Maximum allowed number (float or integer)"
-                }
+                    "description": "Maximum allowed number (float or integer)",
+                },
             },
             "required": ["value", "min_value", "max_value"],
-            "additionalProperties": False
+            "additionalProperties": False,
         },
-        "strict": True
+        "strict": True,
     }

@@ -1,6 +1,7 @@
-from typing import Dict, List, Union, Any, Tuple
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, List, Tuple, Union
+
 from SqlDB.user_cache import UserCache
 
 
@@ -25,22 +26,25 @@ class ConversationManager:
         if not user_id:
             raise ValueError("User ID cannot be empty")
 
-    def add_message(self, user_id: str, role: str, content: Union[str, Dict[str, Any], List[Dict[str, Any]]]) -> None:
+    def add_message(
+        self,
+        user_id: str,
+        role: str,
+        content: Union[str, Dict[str, Any], List[Dict[str, Any]]],
+    ) -> None:
         self._validate_user_id(user_id)
 
         if user_id not in self._conversations:
             self._conversations[user_id] = []
 
-        message = Message(
-            role=role,
-            content=content,
-            timestamp=datetime.now()
-        )
+        message = Message(role=role, content=content, timestamp=datetime.now())
 
         self._conversations[user_id].append(message)
 
         if len(self._conversations[user_id]) > self._max_history:
-            self._conversations[user_id] = self._conversations[user_id][-self._max_history:]
+            self._conversations[user_id] = self._conversations[user_id][
+                -self._max_history :
+            ]
 
     def get_conversation_history(self, user_id: str) -> List[dict]:
         self._validate_user_id(user_id)
