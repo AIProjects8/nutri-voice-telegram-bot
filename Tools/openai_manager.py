@@ -1,4 +1,3 @@
-
 from config import Config
 from Constants.prompts import PromptsConstants
 from SqlDB.user_cache import UserCache
@@ -37,7 +36,7 @@ class OpenAIManager:
         response = OpenAIClient.get_instance().client.responses.create(
             model=Config.from_env().gpt_model,
             input=messages,
-            instructions=PromptsConstants.CHAT_MAIN_PROMPT
+            instructions=PromptsConstants.CHAT_MAIN_PROMPT,
         )
 
         response_text = response.output_text
@@ -45,21 +44,17 @@ class OpenAIManager:
 
         return response_text
 
-    async def process_image(self, telegram_user_id: int, image_path: str, text: str) -> str:
+    async def process_image(
+        self, telegram_user_id: int, image_path: str, text: str
+    ) -> str:
         conv_manager = ConversationManager()
         db_user_id = UserCache().get_user_id(telegram_user_id)
 
         data_url = encode_image_to_data_url(image_path)
 
         input_content = [
-            {
-                "type": "input_text",
-                "text": text
-            },
-            {
-                "type": "input_image",
-                "image_url": data_url
-            }
+            {"type": "input_text", "text": text},
+            {"type": "input_image", "image_url": data_url},
         ]
 
         conv_manager.add_message(db_user_id, "user", input_content)
@@ -68,7 +63,7 @@ class OpenAIManager:
         response = OpenAIClient.get_instance().client.responses.create(
             model=Config.from_env().gpt_model,
             input=messages,
-            instructions=PromptsConstants.CHAT_MAIN_PROMPT
+            instructions=PromptsConstants.CHAT_MAIN_PROMPT,
         )
 
         response_text = response.output_text

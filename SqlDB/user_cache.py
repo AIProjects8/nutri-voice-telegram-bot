@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+
 from .models import User
 
 
@@ -17,8 +18,7 @@ class UserCache:
     def get_user_id(self, telegram_id: int) -> str:
         user = self.get_user(telegram_id)
         if user is None:
-            raise ValueError(
-                f"User with telegram_id {telegram_id} not found in cache")
+            raise ValueError(f"User with telegram_id {telegram_id} not found in cache")
         return str(user.id)
 
     def add_user(self, telegram_id: int, user: User) -> None:

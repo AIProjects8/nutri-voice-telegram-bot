@@ -1,5 +1,7 @@
 from functools import wraps
+
 from config import Config
+
 
 def restricted(func):
     @wraps(func)
@@ -9,4 +11,5 @@ def restricted(func):
             print(f"Access denied for {user_id}.")
             return
         return func(update, context, *args, **kwargs)
+
     return wrapped
