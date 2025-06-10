@@ -1,5 +1,8 @@
 import openai
+
 from config import Config
+from Constants.tools import ToolsConstants
+
 
 class OpenAIClient:
     _instance = None
@@ -18,4 +21,29 @@ class OpenAIClient:
 
     @property
     def client(self):
-        return self._client 
+        return self._client
+
+
+class OpenAITools:
+
+    def validate_range(value: int | float, min_value: int | float, max_value: int | float) -> bool:
+        """Validates if a value is within the specified range."""
+        return min_value <= value <= max_value
+
+    def handle_validate_range(args: dict) -> bool:
+        """Handle validate range tool call."""
+
+        result = OpenAITools.validate_range(
+            value=args["value"],
+            min_value=args["min_value"],
+            max_value=args["max_value"]
+        )
+
+        return result
+
+    def handle_call_function(name: str, args: dict) -> str:
+        """Handle tool calls from the response."""
+        if name == ToolsConstants.VALIDATE_RANGE:
+            return OpenAITools.handle_validate_range(args)
+        else:
+            return f"Tool call not supported"
