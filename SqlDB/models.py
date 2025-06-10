@@ -1,13 +1,4 @@
-from sqlalchemy import (
-    UUID,
-    BigInteger,
-    Column,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    text,
-)
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.ext.declarative import declarative_base
 

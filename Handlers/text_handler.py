@@ -2,7 +2,6 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from SqlDB.middleware import update_db_user
-from SqlDB.user_cache import UserCache
 from Tools.auth_helper import restricted
 from Tools.openai_manager import OpenAIManager
 
