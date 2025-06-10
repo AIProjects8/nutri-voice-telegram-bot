@@ -46,123 +46,20 @@ class UserDetailsResponse:
         }
 
 
-class OpenAIDetailsRequestHandler:
-    """Handles OpenAI requests for user details operations."""
-
-    def __init__(self):
-        self.handler = GeneralOpenAIHandler()
-        self.model = Config.from_env().gpt_model
-
-    def _create_request_config(
-        self, temperature: float = 0.0, tools: list = None
-    ) -> OpenAIRequestConfig:
-        """Create OpenAI request configuration."""
-        return OpenAIRequestConfig(
-            model=self.model,
-            temperature=temperature,
-            tools=tools or [],
-            max_retries=Constants.MAX_SURVEY_REQUESTS,
-        )
-
-    def make_json_request(
-        self, system_prompt: str, user_prompt: str, temperature: float = 0.0
-    ) -> Dict[str, Any]:
-        """Make a JSON request to OpenAI."""
-        result = self.handler.make_json_request(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            model=self.model,
-            temperature=temperature,
-        )
-
-        if not result.success:
-            raise Exception(f"Failed to get user details: {result.error}")
-        return result.parsed_json
-
-    def make_function_request(
-        self, messages: list, temperature: float = 0.5, tools: list = None
-    ) -> Dict[str, Any]:
-        """Make a function call request to OpenAI."""
-        config = self._create_request_config(temperature, tools)
-        result = self.handler.make_request(
-            messages, config, OpenAITools.handle_call_function
-        )
-
-        if not result.success:
-            raise Exception(f"Failed to make function request: {result.error}")
-        return {
-            Constants.SUCCESS: result.success,
-            "response_text": result.response_text,
-            Constants.ERROR: result.error,
-        }
-
-    def create_messages(self, system_prompt: str, user_prompt: str) -> list:
-        """Create message list for OpenAI request."""
-        return [
-            self.handler.create_message("system", system_prompt),
-            self.handler.create_message("user", user_prompt),
-        ]
-
-
 class OpenAIUserDetailsManager:
     """Manages user details operations using OpenAI."""
 
     def __init__(self):
-        self.request_handler = OpenAIDetailsRequestHandler()
+        self.openai_handler = GeneralOpenAIHandler()
 
     def _get_user_details_from_answers(self, answers: str, user_prompt: str) -> dict:
         """Extract user details from survey answers using OpenAI."""
         user_prompt = user_prompt.format(answers_text=answers)
-        return self.request_handler.make_json_request(
+
+        return self.openai_handler.make_json_request(
             system_prompt=SystemPromptsConstants.SURVEY_ANSWERS_ASSISTANT,
             user_prompt=user_prompt,
         )
-
-    def ask_question(self, question: str, user_input: str) -> str:
-        """Validate user answer using GPT with function calling."""
-        max_date = datetime.now().year
-        min_date = max_date - 100
-
-        system_prompt = SystemPromptsConstants.MEDICAL_INTAKE_ASSISTANT.format(
-            min_date=min_date,
-            max_date=max_date,
-            no_answer_response=PromptsConstants.SURVEY_DONT_UNDERSTAND_PROMPT,
-            parse_error_response=PromptsConstants.SURVEY_PARSE_ERROR,
-        )
-        user_prompt = PromptsConstants.SURVEY_QUESTION_PROMPT.format(
-            question=question, user_input=user_input
-        )
-
-        messages = self.request_handler.create_messages(system_prompt, user_prompt)
-        result = self.request_handler.make_function_request(
-            messages=messages,
-            temperature=0.5,
-            tools=[ToolDescriptionConstants.VALIDATE_RANGE],
-        )
-
-        if result[Constants.SUCCESS] and result["response_text"]:
-            return result["response_text"]
-        return PromptsConstants.SURVEY_PROMPT_ERROR
-
-    def create_user_details_from_answers(self, answers: dict, user_id: str) -> bool:
-        """Create UserDetails object from survey answers and save to database."""
-        try:
-            details = self._get_user_details_from_answers(
-                answers, PromptsConstants.SURVEY_ANSWERS_PROMPT
-            )
-
-            create_user_details(
-                user_id=user_id,
-                weight=float(details["weight"]),
-                year_of_birth=int(details["year_of_birth"]),
-                gender=details["gender"],
-                allergies=details["allergies"],
-            )
-            return True
-
-        except Exception as e:
-            print(f"Error creating user details: {str(e)}")
-            return False
 
     def _prepare_confirmation_prompts(
         self, current_user_data: dict, user_response: str
@@ -237,20 +134,22 @@ class OpenAIUserDetailsManager:
             system_prompt, user_prompt = self._prepare_confirmation_prompts(
                 current_user_data, user_response
             )
-            messages = self.request_handler.create_messages(system_prompt, user_prompt)
 
-            result = self.request_handler.make_function_request(
-                messages=messages,
-                temperature=0.3,
+            result = self.openai_handler.make_function_request(
+                system_prompt,
+                user_prompt,
                 tools=[ToolDescriptionConstants.VALIDATE_RANGE],
+                function_handler=OpenAITools.handle_call_function,
+                temperature=0.3,
+                max_retries=6,
             )
 
-            if not result[Constants.SUCCESS]:
+            if not result.success:
                 return UserDetailsResponse.error_response(
-                    error=result[Constants.ERROR], action=Constants.ERROR
+                    error=result.error, action=Constants.ERROR
                 )
 
-            response_text = result["response_text"].strip()
+            response_text = result.response_text.strip()
 
             special_response = self._handle_special_responses(response_text)
             if special_response:
@@ -260,3 +159,54 @@ class OpenAIUserDetailsManager:
 
         except Exception as e:
             return UserDetailsResponse.error_response(str(e))
+
+    def ask_question(self, question: str, user_input: str) -> str:
+        """Validate user answer using GPT with function calling."""
+        max_date = datetime.now().year
+        min_date = max_date - 100
+
+        system_prompt = SystemPromptsConstants.MEDICAL_INTAKE_ASSISTANT.format(
+            min_date=min_date,
+            max_date=max_date,
+            no_answer_response=PromptsConstants.SURVEY_DONT_UNDERSTAND_PROMPT,
+            parse_error_response=PromptsConstants.SURVEY_PARSE_ERROR,
+        )
+        user_prompt = PromptsConstants.SURVEY_QUESTION_PROMPT.format(
+            question=question, user_input=user_input
+        )
+
+        result = self.openai_handler.make_function_request(
+            system_prompt,
+            user_prompt,
+            tools=[ToolDescriptionConstants.VALIDATE_RANGE],
+            function_handler=OpenAITools.handle_call_function,
+            temperature=0.5,
+        )
+
+        if result.success and result.response_text:
+            return result.response_text
+        return PromptsConstants.SURVEY_PROMPT_ERROR
+
+    def create_user_details_from_answers(self, answers: dict, user_id: str) -> bool:
+        """Create UserDetails object from survey answers and save to database."""
+        try:
+            result = self._get_user_details_from_answers(
+                answers, PromptsConstants.SURVEY_ANSWERS_PROMPT
+            )
+            details = result.parsed_json
+
+            if not result.success or not details:
+                return False
+
+            create_user_details(
+                user_id=user_id,
+                weight=float(details["weight"]),
+                year_of_birth=int(details["year_of_birth"]),
+                gender=details["gender"],
+                allergies=details["allergies"],
+            )
+            return True
+
+        except Exception as e:
+            print(f"Error creating user details: {str(e)}")
+            return False
