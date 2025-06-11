@@ -15,6 +15,10 @@ class Config:
     voice_response: bool
     gpt_model: str
     allowed_user_ids: list[int]
+    use_agents: bool
+    mongodb_uri: str
+    mongodb_database: str
+    model_temperature: float
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -32,6 +36,10 @@ class Config:
             voice_response=os.getenv("VOICE_RESPONSE"),
             gpt_model=os.getenv("GPT_MODEL"),
             allowed_user_ids=allowed_user_ids,
+            use_agents=os.getenv("USE_AGENTS"),
+            mongodb_uri=os.getenv("MONGODB_URI"),
+            mongodb_database=os.getenv("MONGODB_DATABASE"),
+            model_temperature=float(os.getenv("MODEL_TEMPERATURE", "0.7")),
         )
 
     def validate(self) -> None:
@@ -43,8 +51,6 @@ class Config:
             missing_vars.append("BOT_USERNAME")
         if not self.openai_api_key:
             missing_vars.append("OPENAI_API_KEY")
-        if not self.voice_response:
-            missing_vars.append("VOICE_RESPONSE")
         if not self.gpt_model:
             missing_vars.append("GPT_MODEL")
         if not self.allowed_user_ids:
