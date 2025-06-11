@@ -3,13 +3,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 
-from config import Config
 from Constants.const import Constants
 from Constants.prompts import PromptsConstants, SystemPromptsConstants
 from Constants.responses import ResponsesConstants
 from Constants.tools import ToolDescriptionConstants
 from SqlDB.user_details_service import create_user_details
-from Tools.openai_session import GeneralOpenAIHandler, OpenAIRequestConfig
+from Tools.openai_session import GeneralOpenAIHandler, OpenAIResponse
 from Tools.openai_tools import OpenAITools
 
 
@@ -52,7 +51,9 @@ class OpenAIUserDetailsManager:
     def __init__(self):
         self.openai_handler = GeneralOpenAIHandler()
 
-    def _get_user_details_from_answers(self, answers: str, user_prompt: str) -> dict:
+    def _get_user_details_from_answers(
+        self, answers: str, user_prompt: str
+    ) -> OpenAIResponse:
         """Extract user details from survey answers using OpenAI."""
         user_prompt = user_prompt.format(answers_text=answers)
 
