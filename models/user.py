@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class User(BaseModel):
     user_id: int = Field(..., description="Telegram user ID")
@@ -15,6 +17,4 @@ class User(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.now)
 
     class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+        json_encoders = {datetime: lambda v: v.isoformat()}

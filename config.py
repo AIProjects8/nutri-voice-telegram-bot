@@ -39,7 +39,7 @@ class Config:
             use_agents=os.getenv("USE_AGENTS"),
             mongodb_uri=os.getenv("MONGODB_URI"),
             mongodb_database=os.getenv("MONGODB_DATABASE"),
-            model_temperature=float(os.getenv("MODEL_TEMPERATURE", "0.7"))
+            model_temperature=float(os.getenv("MODEL_TEMPERATURE", "0.7")),
         )
 
     def validate(self) -> None:

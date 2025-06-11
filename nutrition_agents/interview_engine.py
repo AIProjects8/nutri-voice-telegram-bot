@@ -1,7 +1,9 @@
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
 from Constants.prompts import REGISTRATION_QUESTIONS, SystemPromptsConstants
+
 
 class RegistrationStep(Enum):
     NAME = "name"
@@ -11,28 +13,30 @@ class RegistrationStep(Enum):
     ALLERGIES = "allergies"
     COMPLETED = "completed"
 
+
 @dataclass
 class InterviewState:
     user_id: int
     current_step: RegistrationStep
     collected_data: Dict[str, Any]
-    
+
     def __post_init__(self):
         if self.collected_data is None:
             self.collected_data = {}
 
+
 class InterviewEngine:
     _states: Dict[int, InterviewState] = {}
-    
+
     STEP_ORDER = [
         RegistrationStep.NAME,
         RegistrationStep.DATE_OF_BIRTH,
         RegistrationStep.WEIGHT,
         RegistrationStep.HEIGHT,
         RegistrationStep.ALLERGIES,
-        RegistrationStep.COMPLETED
+        RegistrationStep.COMPLETED,
     ]
-    
+
     QUESTIONS = {
         RegistrationStep.NAME: REGISTRATION_QUESTIONS["name"],
         RegistrationStep.DATE_OF_BIRTH: REGISTRATION_QUESTIONS["date_of_birth"],
@@ -45,9 +49,7 @@ class InterviewEngine:
     def get_state(cls, user_id: int) -> InterviewState:
         if user_id not in cls._states:
             cls._states[user_id] = InterviewState(
-                user_id=user_id,
-                current_step=RegistrationStep.NAME,
-                collected_data={}
+                user_id=user_id, current_step=RegistrationStep.NAME, collected_data={}
             )
         return cls._states[user_id]
 
@@ -61,21 +63,23 @@ class InterviewEngine:
     @classmethod
     def process_answer(cls, user_id: int, answer: str) -> tuple[bool, Optional[str]]:
         state = cls.get_state(user_id)
-        
+
         field_name = state.current_step.value
         processed_value = cls._process_field_value(state.current_step, answer)
-        
+
         if processed_value is not None:
             state.collected_data[field_name] = processed_value
             cls._advance_step(state)
-            
+
             if state.current_step == RegistrationStep.COMPLETED:
                 return True, SystemPromptsConstants.REGISTRATION_COMPLETION_MESSAGE
             else:
                 next_question = cls.get_next_question(user_id)
                 return False, next_question
         else:
-            return False, SystemPromptsConstants.REGISTRATION_ERROR_MESSAGE.format(question=cls.QUESTIONS[state.current_step])
+            return False, SystemPromptsConstants.REGISTRATION_ERROR_MESSAGE.format(
+                question=cls.QUESTIONS[state.current_step]
+            )
 
     @classmethod
     def _process_field_value(cls, step: RegistrationStep, value: str) -> Any:
@@ -86,15 +90,15 @@ class InterviewEngine:
                 age = int(value)
                 return age if 1 <= age <= 120 else None
             elif step == RegistrationStep.WEIGHT:
-                weight = float(value.replace(',', '.'))
+                weight = float(value.replace(",", "."))
                 return weight if 20.0 <= weight <= 300.0 else None
             elif step == RegistrationStep.HEIGHT:
                 height = int(value)
                 return height if 50 <= height <= 250 else None
             elif step == RegistrationStep.ALLERGIES:
-                if value.lower() in ['no', 'none', 'nie', 'brak']:
+                if value.lower() in ["no", "none", "nie", "brak"]:
                     return []
-                return [allergy.strip() for allergy in value.split(',')]
+                return [allergy.strip() for allergy in value.split(",")]
         except (ValueError, TypeError):
             return None
         return value

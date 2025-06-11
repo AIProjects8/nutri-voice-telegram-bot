@@ -130,7 +130,9 @@ When registration is complete, welcome them to the app.
 """
 
 
-REGISTRATION_COMPLETION_MESSAGE = "Dziękuję! Rejestracja zakończona. Możesz teraz zacząć śledzić swoją dietę."
+REGISTRATION_COMPLETION_MESSAGE = (
+    "Dziękuję! Rejestracja zakończona. Możesz teraz zacząć śledzić swoją dietę."
+)
 REGISTRATION_ERROR_MESSAGE = "Nie rozumiem odpowiedzi. {question}"
 ALREADY_REGISTERED_MESSAGE = "Jesteś już zarejestrowany."
 REGISTRATION_WELCOME_MESSAGE = "Świetnie! Zacznijmy rejestrację. ✨\n\n{question}"
@@ -140,8 +142,9 @@ REGISTRATION_QUESTIONS = {
     "date_of_birth": "Podaj swoją datę urodzenia (YYYY)",
     "weight": "Ile ważysz w kilogramach?",
     "height": "Jaki jest Twój wzrost w centymetrach?",
-    "allergies": "Czy masz jakieś alergie pokarmowe? (jeśli nie, napisz 'nie')"
+    "allergies": "Czy masz jakieś alergie pokarmowe? (jeśli nie, napisz 'nie')",
 }
+
 
 class PromptsConstants:
 

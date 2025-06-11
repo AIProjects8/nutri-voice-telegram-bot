@@ -1,9 +1,12 @@
+from datetime import datetime
+from typing import Any, Dict, Optional
+
 from pymongo import MongoClient
 from pymongo.collection import Collection
-from typing import Optional, Dict, Any
+
 from config import Config
 from models import User
-from datetime import datetime
+
 
 class DatabaseManager:
     _instance = None
@@ -47,10 +50,7 @@ class DatabaseManager:
 
     def update_user(self, user_id: int, updates: Dict[str, Any]) -> Optional[User]:
         updates["updated_at"] = datetime.now()
-        result = self.users.update_one(
-            {"user_id": user_id},
-            {"$set": updates}
-        )
+        result = self.users.update_one({"user_id": user_id}, {"$set": updates})
         if result.modified_count > 0:
             return self.get_user(user_id)
         return None

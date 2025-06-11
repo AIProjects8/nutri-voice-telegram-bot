@@ -1,17 +1,19 @@
+from agents import Runner
 from config import Config
 from Constants.prompts import PromptsConstants
+from nutrition_agents import (
+    AgentContext,
+    create_orchestrator_agent,
+    create_user_registration_agent,
+)
 from SqlDB.user_cache import UserCache
 from SqlDB.user_details_service import get_user_details
 from Tools.conversation_manager import ConversationManager
+from Tools.database_manager import DatabaseManager
 from Tools.image_helper import encode_image_to_data_url
 from Tools.openai_tools import OpenAIClient
 from Tools.survey_agent import SurveyManager
 
-from SqlDB.user_cache import UserCache
-from Constants.prompts import PromptsConstants
-from nutrition_agents import create_orchestrator_agent, AgentContext, create_user_registration_agent
-from agents import Runner
-from Tools.database_manager import DatabaseManager
 
 class OpenAIManager:
     _instance = None
@@ -28,19 +30,23 @@ class OpenAIManager:
             self._survey_manager = SurveyManager()
         return self._survey_manager
 
-    async def process_with_agent(self, user_id: int, message: str) -> str:        
+    async def process_with_agent(self, user_id: int, message: str) -> str:
         context = AgentContext(user_id=user_id)
         db_manager = DatabaseManager()
-        
-        if not db_manager.user_exists(user_id) or not self._is_registration_completed(user_id):
+
+        if not db_manager.user_exists(user_id) or not self._is_registration_completed(
+            user_id
+        ):
             registration_agent = create_user_registration_agent()
-            result = await Runner.run(registration_agent.agent, message, context=context)
+            result = await Runner.run(
+                registration_agent.agent, message, context=context
+            )
             return result.final_output
         else:
             orchestrator = create_orchestrator_agent()
             result = await Runner.run(orchestrator.agent, message, context=context)
             return result.final_output
-    
+
     def _is_registration_completed(self, user_id: int) -> bool:
         db_manager = DatabaseManager()
         user = db_manager.get_user(user_id)
@@ -50,7 +56,7 @@ class OpenAIManager:
         config = Config.from_env()
         if config.use_agents:
             return await self.process_with_agent(user_id, text)
-        
+
         conv_manager = ConversationManager()
         db_user_id = UserCache().get_user_id(user_id)
 
@@ -59,7 +65,7 @@ class OpenAIManager:
 
         db_user = UserCache().get_user(user_id)
         db_user_id = str(db_user.id)
-        
+
         conv_manager.add_message(db_user_id, "user", text)
         messages = conv_manager.get_conversation_history(db_user_id)
 
