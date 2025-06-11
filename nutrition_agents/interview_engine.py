@@ -1,11 +1,11 @@
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
-from Constants.prompts import REGISTRATION_QUESTIONS, REGISTRATION_COMPLETION_MESSAGE, REGISTRATION_ERROR_MESSAGE
+from Constants.prompts import REGISTRATION_QUESTIONS, SystemPromptsConstants
 
 class RegistrationStep(Enum):
     NAME = "name"
-    AGE = "age"
+    DATE_OF_BIRTH = "date_of_birth"
     WEIGHT = "weight"
     HEIGHT = "height"
     ALLERGIES = "allergies"
@@ -26,7 +26,7 @@ class InterviewEngine:
     
     STEP_ORDER = [
         RegistrationStep.NAME,
-        RegistrationStep.AGE,
+        RegistrationStep.DATE_OF_BIRTH,
         RegistrationStep.WEIGHT,
         RegistrationStep.HEIGHT,
         RegistrationStep.ALLERGIES,
@@ -35,7 +35,7 @@ class InterviewEngine:
     
     QUESTIONS = {
         RegistrationStep.NAME: REGISTRATION_QUESTIONS["name"],
-        RegistrationStep.AGE: REGISTRATION_QUESTIONS["age"],
+        RegistrationStep.DATE_OF_BIRTH: REGISTRATION_QUESTIONS["date_of_birth"],
         RegistrationStep.WEIGHT: REGISTRATION_QUESTIONS["weight"],
         RegistrationStep.HEIGHT: REGISTRATION_QUESTIONS["height"],
         RegistrationStep.ALLERGIES: REGISTRATION_QUESTIONS["allergies"],
@@ -70,19 +70,19 @@ class InterviewEngine:
             cls._advance_step(state)
             
             if state.current_step == RegistrationStep.COMPLETED:
-                return True, REGISTRATION_COMPLETION_MESSAGE
+                return True, SystemPromptsConstants.REGISTRATION_COMPLETION_MESSAGE
             else:
                 next_question = cls.get_next_question(user_id)
                 return False, next_question
         else:
-            return False, REGISTRATION_ERROR_MESSAGE.format(question=cls.QUESTIONS[state.current_step])
+            return False, SystemPromptsConstants.REGISTRATION_ERROR_MESSAGE.format(question=cls.QUESTIONS[state.current_step])
 
     @classmethod
     def _process_field_value(cls, step: RegistrationStep, value: str) -> Any:
         try:
             if step == RegistrationStep.NAME:
                 return value.strip()
-            elif step == RegistrationStep.AGE:
+            elif step == RegistrationStep.DATE_OF_BIRTH:
                 age = int(value)
                 return age if 1 <= age <= 120 else None
             elif step == RegistrationStep.WEIGHT:

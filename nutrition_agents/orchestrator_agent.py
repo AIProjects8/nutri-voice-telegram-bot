@@ -19,7 +19,7 @@ class OrchestratorAgent(BaseAgent):
             instructions=self.instructions,
             model=self.model,
             model_settings=ModelSettings(
-                temperature=config.agent_temperature
+                temperature=config.model_temperature,
             )
         )
     
