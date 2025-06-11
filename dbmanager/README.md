@@ -36,6 +36,7 @@ After calling
 
 the db_manager instance is created and then initialization logic (including connection and collection/index checks) is executed immediately
 
+
 ### Writing data into DB
 ** RECOMMENDED METHOD WITH DATA VALIDATION **
 

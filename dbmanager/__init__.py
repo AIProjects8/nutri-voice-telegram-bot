@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 from .mongo_manager import MongoDBManager
 
 required_collections = ["users", "meals", "symptoms"]
@@ -28,6 +29,7 @@ class DB:
     @property
     def meals(self):
         return _db_manager.db["meals"]
+
 
     @property
     def symptoms(self):

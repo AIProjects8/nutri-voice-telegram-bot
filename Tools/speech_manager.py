@@ -1,6 +1,9 @@
 import os
+
 import requests
+
 from Tools.openai_tools import OpenAIClient
+
 
 class SpeechManager:
     _instance = None
@@ -12,25 +15,24 @@ class SpeechManager:
 
     async def transcribe_voice(self, voice_file_path: str) -> str:
         with open(voice_file_path, "rb") as file:
-            transcription = OpenAIClient.get_instance().client.audio.transcriptions.create(
-                model="whisper-1",
-                file=file
+            transcription = (
+                OpenAIClient.get_instance().client.audio.transcriptions.create(
+                    model="whisper-1", file=file
+                )
             )
         return transcription.text
 
     async def text_to_speech(self, text: str, output_path: str) -> None:
         speech_response = OpenAIClient.get_instance().client.audio.speech.create(
-            model="tts-1",
-            voice="alloy",
-            input=text
+            model="tts-1", voice="alloy", input=text
         )
-        
-        with open(output_path, 'wb') as f:
+
+        with open(output_path, "wb") as f:
             f.write(speech_response.content)
 
     async def download_voice_file(self, file_path: str, output_path: str) -> None:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        
-        with open(output_path, 'wb') as f:
+
+        with open(output_path, "wb") as f:
             response = requests.get(file_path)
-            f.write(response.content) 
+            f.write(response.content)

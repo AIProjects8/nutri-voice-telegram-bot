@@ -19,7 +19,6 @@ class MongoDBManager:
         self._required_collections = required_collections or []
         self._required_indexes = required_indexes or {}
 
-        # Get credentials 
         self.uri = self.get_database_uri()
         self.db_name = os.getenv("MONGO_DB", "nutri_voice")
 
