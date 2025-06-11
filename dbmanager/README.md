@@ -34,7 +34,8 @@ After calling
 
 ``` import dbmanager ```
 
-the db_manager instance is created and initialization logic (including connection and collection/index checks) runs immediately
+the db_manager instance is created and then initialization logic (including connection and collection/index checks) is executed immediately
+
 
 ### Writing data into DB
 ** RECOMMENDED METHOD WITH DATA VALIDATION **
@@ -55,6 +56,10 @@ insert_user(document: Dict[str, Any]) -> str: Validate and insert a single user 
 insert_users(documents: List[Dict[str, Any]]) -> List[str]: Validate and insert multiple user documents.
 insert_symptom(document: Dict[str, Any]) -> str: Validate and insert a single symptom document.
 insert_symptoms(documents: List[Dict[str, Any]]) -> List[str]: Validate and insert multiple symptom documents.
+
+has_user_details(user_id: str) -> bool: Check if user already has details.
+get_user_details_json(user_id: str) -> Optional[dict]: Fetch user details as a JSON.
+get_user_details(user_id: str) -> Optional[UsersCollection]: Fetch user details as an object.
 ```
 
 ### Usage Example:

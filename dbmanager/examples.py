@@ -1,7 +1,6 @@
 from datetime import datetime
-#from dbmanager import db  # Direct collection access
-from dbmanager import data_tools as dt
 
+from dbmanager import data_tools as dt
 
 if __name__ == "__main__":
     # Example: Insert a single meal document
@@ -12,11 +11,11 @@ if __name__ == "__main__":
             "salmon",
             "fish filling (unidentified)",
             "wasabi",
-            "pickled ginger (gari)"
+            "pickled ginger (gari)",
         ],
         "userId": "550e8400-e29b-41d4-a716-446655440000",
         "timestamp": datetime.fromisoformat("2025-04-06T14:32:00"),
-        "Summary": "Six maki sushi rolls with two fillings, wasabi, and gari."
+        "Summary": "Six maki sushi rolls with two fillings, wasabi, and gari.",
     }
 
     meal_id = dt.insert_meal(meal_doc)
@@ -27,9 +26,9 @@ if __name__ == "__main__":
         {
             "userId": "550e8400-e29b-41d4-a716-446655440011",
             "age": 30,
-            "sex": "blob",
+            "gender": "blob",
             "weight": 72.5,
-            "allergies": ["allergic to nuts"]
+            "allergies": ["allergic to nuts"],
         },
         {
             "userId": "550e8400-e29b-41d4-a716-446655440022",
@@ -37,7 +36,7 @@ if __name__ == "__main__":
             "gender": "female",
             "weight": 100.343,
             "allergies": [],
-            "health_issues": []
+            "health_issues": [],
         },
         {
             "userId": "550e8400-e29b-41d4-a716-446655440000",
@@ -45,11 +44,11 @@ if __name__ == "__main__":
             "gender": "female",
             "weight": 60.0,
             "allergies": [],
-            "health_issues": []
-        }   
+            "health_issues": [],
+        },
     ]
 
-    user_ids = dt.insert_users(user_docs)
+    user_ids = dt.insert_users_details(user_docs)
     print(f"Inserted users with IDs: {user_ids}")
 
     # Example: Insert a single symptom document
@@ -74,8 +73,32 @@ if __name__ == "__main__":
             "timestamp": datetime.now(),
             "userId": "550e8400-e29b-41d4-a716-446655440000",
         },
-
     ]
 
     symptom_ids = dt.insert_symptoms(symptom_docs)
-    print(f"Inserted symptoms with IDs: {symptom_ids}")
+
+    if dt.has_user_details("550e8400-e29b-41d4-a716-446655440022"):
+        print("550e8400-e29b-41d4-a716-446655440022 has detials in the DB")
+    else:
+        print("550e8400-e29b-41d4-a716-446655440022 nas NO detials in the DB")
+
+    user_id = "550e8400-e29b-41d4-a716-446655440000"
+    user_details = dt.get_user_details(user_id)
+
+    if user_details:
+        print("User found!")
+        print("User ID:", user_details.userId)
+        print("Year of Birth:", user_details.yearOfBirth)
+        print("Gender:", user_details.gender)
+        print("Weight:", user_details.weight)
+        print("Allergies:", user_details.allergies)
+        print("Health Issues:", user_details.health_issues)
+    else:
+        print("User not found.")
+
+    user_json = dt.get_user_details_json(user_id)
+
+    if user_json:
+        print(user_json)
+    else:
+        print("User not found.")
