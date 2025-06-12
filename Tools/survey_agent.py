@@ -113,16 +113,19 @@ class SurveyManager:
             )
 
         if response.action == Constants.ACTION_UPDATE and response.changes:
-            state.update_answers(response.changes)
+            state.update_answers(response.changes.parsed_json)
             return self._await_confirmation(state)
 
         if response.action == Constants.ERROR:
             return response.error
 
         if response.action == Constants.ACTION_CONFIRM_ALL:
-            self._user_details_manager.create_user_details_from_answers(
+            success = self._user_details_manager.create_user_details_from_answers(
                 state.answers, user_id
             )
+            if not success:
+                return ErrorResponsesConstants.ERROR_RESPONSE_SAVING_DATA
+
             self._clear_survey_state(user_id)
             return ResponsesConstants.SAVED_USER_DETAILS_RESPONSE
 

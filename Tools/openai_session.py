@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai.types.responses.response_function_tool_call import ResponseFunctionToolCall
 
+from config import Config
 from Constants.const import Constants
 from Tools.openai_tools import OpenAIClient
 
@@ -22,13 +23,21 @@ class OpenAIMessage:
 
 @dataclass
 class OpenAIRequestConfig:
-    """Configuration for OpenAI API requests."""
+    """Configuration for OpenAI API requests with automatic defaults."""
 
-    model: str
-    temperature: float = Constants.DEFAULT_TEMPERATURE
-    max_tokens: Optional[int] = None
+    model: Optional[str] = None
+    temperature: Optional[float] = None
     tools: Optional[List[Dict]] = None
-    max_retries: int = Constants.DEFAULT_MAX_REQUESTS
+    max_retries: Optional[int] = None
+
+    def __post_init__(self):
+        """Apply defaults for None values after initialization."""
+        if self.model is None:
+            self.model = Config.from_env().gpt_model
+        if self.temperature is None:
+            self.temperature = Constants.DEFAULT_TEMPERATURE
+        if self.max_retries is None:
+            self.max_retries = Constants.DEFAULT_MAX_REQUESTS
 
 
 class OpenAIResponse:
@@ -127,14 +136,12 @@ class GeneralOpenAIHandler:
             "temperature": config.temperature,
         }
 
-        if config.max_tokens:
-            params["max_tokens"] = config.max_tokens
         if config.tools:
             params["tools"] = config.tools
 
         return params
 
-    def make_request(
+    def _make_request(
         self,
         messages: List[Union[OpenAIMessage, Dict]],
         config: OpenAIRequestConfig,
@@ -167,21 +174,14 @@ class GeneralOpenAIHandler:
 
         return OpenAIResponse.error("Osiagnieto maksymalna liczbe prob")
 
-    def make_simple_request(
-        self, system_prompt: str, user_prompt: str, model: str, temperature: float = 0.0
-    ) -> OpenAIResponse:
-        """Make a simple request without function calling."""
-        messages = [
+    def _prepare_messages(
+        self, system_prompt: str, user_prompt: str
+    ) -> List[OpenAIMessage]:
+        """Prepare messages for API request."""
+        return [
             self.create_message("system", system_prompt),
             self.create_message("user", user_prompt),
         ]
-
-        config = OpenAIRequestConfig(
-            model=model,
-            temperature=temperature,
-        )
-
-        return self.make_request(messages, config)
 
     def _parse_json_response(self, content: str) -> Optional[Dict]:
         """Parse JSON from response content."""
@@ -196,12 +196,63 @@ class GeneralOpenAIHandler:
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse JSON response: {str(e)}")
 
+    def make_function_request(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        tools: List[Dict],
+        function_handler: callable,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_retries: int = Constants.DEFAULT_MAX_FUNCTION_REQUESTS,
+    ) -> OpenAIResponse:
+        """Make a request with function calling."""
+        if not tools or not function_handler:
+            return self.make_simple_request(
+                system_prompt, user_prompt, model, temperature
+            )
+
+        messages = self._prepare_messages(system_prompt, user_prompt)
+
+        config = OpenAIRequestConfig(
+            model=model,
+            temperature=temperature,
+            tools=tools,
+            max_retries=max_retries,
+        )
+
+        return self._make_request(messages, config, function_handler)
+
+    def make_simple_request(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_retries: Optional[int] = None,
+    ) -> OpenAIResponse:
+        """Make a simple request without function calling."""
+        messages = self._prepare_messages(system_prompt, user_prompt)
+
+        config = OpenAIRequestConfig(
+            model=model,
+            temperature=temperature,
+            max_retries=max_retries,
+        )
+
+        return self._make_request(messages, config)
+
     def make_json_request(
-        self, system_prompt: str, user_prompt: str, model: str, temperature: float = 0.0
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_retries: Optional[int] = None,
     ) -> OpenAIResponse:
         """Make a request expecting JSON response and parse it."""
         result = self.make_simple_request(
-            system_prompt, user_prompt, model, temperature
+            system_prompt, user_prompt, model, temperature, max_retries
         )
 
         if result.success and result.response_text:
