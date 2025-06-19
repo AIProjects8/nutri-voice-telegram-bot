@@ -1,7 +1,7 @@
 class Constants:
     DEFAULT_TEMPERATURE = 0.0
     DEFAULT_MAX_REQUESTS = 1
-    MAX_SURVEY_REQUESTS = 2
+    DEFAULT_MAX_FUNCTION_REQUESTS = 2
 
     USER_DETAILS_FIELDS = ["weight", "year_of_birth", "gender", "allergies"]
     # Survey questions
